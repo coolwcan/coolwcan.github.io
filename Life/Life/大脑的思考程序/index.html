@@ -1,0 +1,304 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>高效思考的步骤 | coolwcan</title>
+  <meta name="author" content="coolwcan">
+  
+  <meta name="description" content="1. 界定问题也就是说，如果想让我们的大脑高效率的正常运转，进入主运算程序的话，第一要界定问题。我的朋友王子开了一家美容院。比如她刚刚开始经营，希望有客户到店里来，她要考虑如何增加她的企业的影响力，增加知名度，有更多的客户来接受她的服务，她思考这样的一问题的话，她要先界定：我到底遇到了什么问题？是我">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="高效思考的步骤"/>
+  <meta property="og:site_name" content="coolwcan"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="//images/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="coolwcan" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//libs.baidu.com/jquery/1.8.0/jquery.min.js"></script>
+  <script>
+	$(function() {
+		$(".search").keydown(function(e){
+			if (e.keyCode==13) {
+                // var path = "/search.xml";
+                // searchFunc(path, 'local-search-input', 'local-search-result');
+			}
+		});
+	})
+
+    'use strict';
+	var search_id = 'local-search-input'
+    var content_id = 'local-search-result'
+    $.ajax({
+        url: '/search.xml',
+        dataType: "xml",
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                $resultContent.style.display = 'none'
+                var str='<ul class=\"entry search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length <= 0) {
+                    return;
+                }
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title !== '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            if( index_title < 0){
+                                isMatch = false;
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        str += "<li><a href='"+ data_url +"' class='search-result-title' target='_blank'>"+ "> " + data_title +"</a>";
+                    }
+                })
+                $resultContent.innerHTML = str;
+                if (str && str.length > 0) {
+                    $resultContent.style.display = 'block'
+                }
+            })
+        }
+    })
+
+
+  </script>
+</head>
+
+
+<body>
+  <header><div>
+    <nav class="animated">
+        <ul>
+            
+            <li><a href="/">Home</a></li>
+            
+            <li><a href="/about">About</a></li>
+            
+            <li><a href="/atom.xml">RSS</a></li>
+        </ul>
+    </nav>
+</div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header class="article-info clearfix">
+	<h1 itemprop="name">
+		高效思考的步骤
+	</h1>
+</header>
+    <div class="entry">
+        <h3 id="1-_界定问题">1. 界定问题</h3><p>也就是说，如果想让我们的大脑高效率的正常运转，进入主运算程序的话，第一要界定问题。我的朋友王子开了一家美容院。比如她刚刚开始经营，希望有客户到店里来，她要考虑如何增加她的企业的影响力，增加知名度，有更多的客户来接受她的服务，她思考这样的一问题的话，她要先界定：我到底遇到了什么问题？是我信息发布的问题，还是我服务项目的问题？还是我服务品质的问题？首先要界定清楚我遇到的是什么样的问题，我想解决什么问题，我是想把人招开？要把价格提上来？还是要把利润提上来？这是不同的概念。当我们的大脑在思考问题的时候，我们普通人思考了半天，啥都没想。大脑根本没有进入主运算程序。在同一个地方卡住了。所以大脑的运作程序，第一个是要先界定问题。比如考研究生，这是一个复杂的系统，我们评估一下，我到底要解决什么问题？是不认识相关的人，还是没有人来帮我，还是我要解决我的基础知识？问你到底要解决什么问题？很多女士在面临着丈夫有外遇，情爱的复杂问题上，她只是在那骂，怨恨，只是在那自艾自怜。没有真正问过自己，我到底遇到了什么样的问题？我该如何解决这个问题？首先我要解决什么问题？我是要解决离婚的问题，还是要保住这个家庭的问题！我要怎么样解决这个问题，先要弄清楚到底要解决什么问题。大部分人根本没有这个程序。相当于计算机闲置着，没有用。所以，你要先给你的大脑输入指令。大脑是台高效能的计算机，你没有给它输入条件，却让它求解！所以你必须先研究我到底要解决什么问题。这相当于给大脑输入一个指令，给我计算这个方程！我限你两个小时之内把解求出来。这是界定问题。</p>
+<h3 id="2-_有坚定的解决问题的信念">2. 有坚定的解决问题的信念</h3><p>坚信你的大脑一定能解决这个问题，这叫做信念。坚信你的问题一定会有解，大脑一定能解决这个问题，得出结论。信念是进入大脑主程序的通道。大部分人开始界定了问题，“我要给自己营业额提高50%！”，他刚刚要进入这样的问题，然后马上给自己一个结论“这是不可能的！”等于刚输入指令，计算机刚要启动，你马上说“停！”，等于向相反方向下命令，所以这是不可能的！你刚告诉你的大脑，“我要提升50%的营业额”，马上又说，“这不可能，这长春这么热，非典影响这么大，这不可能！”。相当于你给大脑一个命令“往东走！”然后马上再下命令“往西走！”大脑根本什么也没做！有人说，“看我这个脑袋怎么就不像人家的那样好用呢！”那是因为人家的运作程序跟你不一样！所以，大脑思考的第二个程序就是你的信念，决定你是否启动主程序。主程序的按钮相当于计算机上的ENTER键，有信念，像按回车键；没有信念，就停止了。</p>
+<h3 id="3-_解决问题的白热化欲望">3. 解决问题的白热化欲望</h3><p>你必须激发起要解决你问题的强烈欲望。计算机是否能在不开启电源的情况进行运作？不可能的。人脑运作的能量是哪来的？人脑运作需要供应的能量是欲望。我们大部分人是解决也行，不解决也无所谓！这就相当于给计算机断电。如果你想解决你人生中的任何一个难题，必须有白热化的欲望，人脑这台计算机才能开足马力进行运算。否则的话，计算机停电不工作。欲望是大脑的动力系统，而你没有解决问题的欲望，没有强烈的解决的欲望。“我就是要今年挣到100万！你必须给我运算出答案来！”你只有给大脑下死命令！大脑才会开始启动。首先是界定问题，我要今年挣到100万，这个问题已经明确了，第二个是信念：我一定能挣到100万！答案在哪，我一定能找出来！这样大脑开始运作了。开始它运作得很慢，当你有强烈的欲望，相当于你给大脑充分的电能进行加速！好像汽车的油门踩到底，它百分之百会把能量发挥出来，开足马力运作！所以当你想要解决你问题的时候，如果你没有解决问题的欲望的话，你的大脑是不会给你想出办法来的！当你有了白热化的欲望，你的潜意识接受到了这个信息，它慢慢开始启动程序，像一个巨大的螺纹系统，他开始慢慢的转动，愈转愈快，最后他给你运作一个答案来。这是第三个程序。</p>
+<h3 id="4-_把你的注意力维持在这个事情的解决办法上，而不是问题上">4. 把你的注意力维持在这个事情的解决办法上，而不是问题上</h3><p>大部分人是想十分钟，没有解决办法，“不行，这事放弃吧！”信念开始动摇。这是基本的运算程序。如果大家没把这件事情考虑明白，那就太遗憾了。实际上，教你如何使用这个计算机，第一个是把问题输入进去；第二是要坚信它能够解决，你不坚信它就停了；第三个要输入巨大的能量，有强烈的要解决这个问题的欲望，有了白热化的欲望，它开始运转了，这相当于巨大的惯性系统的轮子一样开始运转；第四个是维持你的注意力，不间断的专注在你解决问题的办法上，而不是维持在“我为什么不可以解决”上！大部分人他的注意力维持不到五分钟。如果你能维持你的注意力在正面上就“一定能解决！一定有好消息！一定有好的办法！……”找出一个放在一边，这些方法先不进行评估，不断的去找，告诉自己“可能还有新的方法，可能还有新的方法！……就是有，一定有，一定有……”如果你能维持你的注意力两个小时以上，人生中普通人的所有难题都可以找到答案。大部分的人连五分钟都维持不住。你可以尝试一下，你会觉察你的大脑是怎么运作的。开始想“我怎么样才能把老公的心收回来？”好，问题设定完了。然后坚信“一定有办法把他的心收回来，把外边的妖精赶走！一定有办法！”第三个，强烈的欲望“我太痛苦了！我必须把他的心收回来！”然后开始想，“我今天化妆来诱惑他？我今天回家给他煮面？……”想各种办法。可是大部分人是怎么想的呢？“我一定要把他的心收回来”，然后马上想，“不可能，那个狐狸精比我……”马上她就反过来想，“我一定有办法把他解决，”接着想：“他这个人生性就花心……”；“我一定有办法”，接着再想“不行，他这个人说不动！……”你的大脑接受的指令是“往东！往西！往东！往西！……”大部分人在干嘛呢？大部分人想了二十分钟就痛苦不堪了。你是人，如果是计算机，它一定会找你的麻烦。计算机有时像这笑话里的鹦鹉。有人得到一个会说话的鹦鹉，鹦鹉在一支短枝上立着。主人对客人说“你看我的鹦鹉会说话，你拉它的左脚，它就会说‘你好！’；如果你拉它的右脚，它就会说‘谢谢！’”这个客人就拉一下它的左脚，鹦鹉张口：“你好！”，再拉它的右脚，鹦鹉又张口：“谢谢！”。这客人问主人，“如果我两只脚一起拽会怎样呢？”这时鹦鹉说话了：“你要把老娘摔死来呀！”实际上，你的大脑被你弄混乱了！你一会告诉它“有办法解决”，一会又告诉它“没有办法解决！”这两个相反方向的信息同时在输入，一会儿往东，一会儿往西，你会怎么样呢？紧张、焦虑、烦躁……痛苦不堪。就是因为你把它折磨，它才让你痛苦不堪。它让你感觉“我太痛苦了！算了，喝酒！……”一有压力，就有方式避开。你给大脑下了相反方向的命令，这是从小的习惯形成的，90%的人都是这样的。我们不懂大脑的运作程序。假设有个人站在这里，用二个小时我能把他折腾疯了！他一会就晕了，为什么说一仆二主难做呢，A主人说往东，B主人说往西，最后把人弄成精神病了。大部分人没有疯，是因为大脑的的容量太大了。“不想了，喝酒去吧！算了，大不了拿出个别的方案……”“算了，不行我也弄个情人得了！……”我想告诉大家，你的头脑需要持续的专注在一个问题上往正面的方向去想，往同一方向想，“一定有解！一定有解！……”这样大脑才能持续的运作。应该讲，爱因斯坦的专注力恐怕是世上无人可比的。他可以长达几周专注在同一个问题上。一个普通人如果你能专注在你的问题上，持续的沿着同一个方向想二个小时，所有人，包括我，我们所有的问题都是可以解决的。一个大的科学家，你能专注在你所研究的问题上，大约一周的时间，如果不变的话，那么遇到的大部分科学问题都可以得到答案。我们的大脑实在是太强大了，可是我们大部分人不明白这个道理。</p>
+<h3 id="5-_放松">5. 放松</h3><p>大脑的运作是和身体连接的，它的物质形态的能量是要供应血液、通过糖的方式来供应大脑的高速运转的需要，相当于大脑里面的机器在运转。当我们肌肉紧张的时候就没有血液供应大脑，它里面的能量供应就减速。大脑是通过两种介质来进行思考的，一是化学介质，一是电介质。这两种介质是要在大脑兴奋的状况下才能活跃。一个化学分泌介质，就是荷尔蒙，另一是电介质。对大家而言，只有肌肉放松，才有能量供应大脑，才有能量供应大脑。大部分人处在紧张焦虑状态，当你的身体肌肉处在焦虑紧张状态时，没有血液流向大脑，大脑的能量不足，所以想一会你就头晕脑胀，什么也想不出来。要知道大脑进入真正高效率工作状态时，你会感觉异常清晰，大脑像一个无垠的宇宙一样，什么问题都可以瞬间去想。如果大脑供氧不足，一会头昏脑胀，什么也想不下去了。这是80%的人不会用脑，想一会事就累了，厌倦了，想不下去了。深层原因是肌肉处在紧张状态，整个人处在焦虑状态没有能量供应大脑。</p>
+<h3 id="6-_主动体会大脑思考时的快乐">6. 主动体会大脑思考时的快乐</h3><p>当你能够体会思考的时候是大脑在高速运转的状态。如果你能够主动的去体会快乐，大脑会产生白色物质向大脑区域喷射，这种白色物质是叫β内腓肽系列的荷尔蒙。这样一来，大脑的记忆思考有两种介质，一个电，输入脑电波来进行信息收集传递；还有是内腓肽系列的化学物质。当你在快乐状态去思考问题的时候，你大脑分泌大量的荷尔蒙，相当于给你大脑运输的工具非常丰富，它会迅速的把信息传达到位，然后整合出想要的问题答案。对于大家来讲，处在紧张焦虑状态，无法体会思考的快乐。他们体会到的只是思考的痛苦。很多人一想到想问题就想得脑袋生疼，说明没进入主运算程序。假如计算机是有灵性的话，你刚输入“往东”，又“往西”，它也会愤怒，“你到底让我怎么做！”而你整天给你的大脑输入相反的指令，你的大脑还能扛在你的肩膀上就不错了！还能帮你运算出额外的程序，这是大脑的功能太强大了！</p>
+
+    </div>
+    <footer>
+        
+	
+	<div class="categories">
+	<a href="/categories/Life/">Life</a>
+	</div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Life/">Life</a>, <a href="/tags/Efficiency/">Efficiency</a>
+  </div>
+
+        <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+ <nav id="pagination" >
+    
+    <a href="/Java/Java/Java-集合/" class="alignleft prev" title="Java-集合类">Java-集合类</a>
+    
+    
+    <a href="/Java/Java/Java-类加载机制/" class="alignright next" title="Java-类加载机制">Java-类加载机制</a>
+    
+    <div class="clearfix"></div>
+</nav>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="widget author-meta">
+    <div class="author-avatar">
+        <img src="/images/author.jpg">
+    </div>
+    <div class="author-name">coolwcan</div>
+    <div class="author-work">Java Developer</div>
+    <div class="author-location">
+        <i class="icon-location"></i>
+        <span>四川成都</span>
+    </div>
+    <div class="social-font">
+        
+        <a href="https://github.com/coolwcan" target="_blank" title="github"></a>
+        
+        
+        <a href="mailto:coolwcan@163.com" target="_blank" class="icon-email" title="email"></a>
+        
+    </div>
+</div>
+
+
+  <div class="widget search" style="margin-bottom: 30px">
+    <input id="local-search-input" class="search" type="search" placeholder="搜索">
+    <div id="local-search-result" style="display: none;" class="entry"></div>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    
+        <li><a href="/categories/Algorithm/">Algorithm</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/C-C/">C/C++</a><small>21</small></li>
+    
+  
+    
+        <li><a href="/categories/Coding/">Coding</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Computer/">Computer</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Database/">Database</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/DevOps/">DevOps</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Distributed/">Distributed</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Erlang/">Erlang</a><small>7</small></li>
+    
+  
+    
+        <li><a href="/categories/J2ee/">J2ee</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Java/">Java</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Life/">Life</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Network/">Network</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/Security/">Security</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/Shiro/">Shiro</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Tools/">Tools</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Web/">Web</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Zookeeper/">Zookeeper</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/配置中心/">配置中心</a><small>1</small></li>
+    
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/ACK/" style="font-size: 10px;">ACK</a> <a href="/tags/Archlinux/" style="font-size: 10px;">Archlinux</a> <a href="/tags/Arrays/" style="font-size: 10px;">Arrays</a> <a href="/tags/Base64/" style="font-size: 10px;">Base64</a> <a href="/tags/C-C/" style="font-size: 20px;">C/C++</a> <a href="/tags/CRC/" style="font-size: 10px;">CRC</a> <a href="/tags/Cache/" style="font-size: 10px;">Cache</a> <a href="/tags/Centos/" style="font-size: 10px;">Centos</a> <a href="/tags/Chrome/" style="font-size: 10px;">Chrome</a> <a href="/tags/Class/" style="font-size: 10px;">Class</a> <a href="/tags/Coding/" style="font-size: 10px;">Coding</a> <a href="/tags/Collection/" style="font-size: 11.43px;">Collection</a> <a href="/tags/Compile/" style="font-size: 10px;">Compile</a> <a href="/tags/Compiler/" style="font-size: 10px;">Compiler</a> <a href="/tags/Computer/" style="font-size: 11.43px;">Computer</a> <a href="/tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="/tags/DDos/" style="font-size: 10px;">DDos</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Database/" style="font-size: 10px;">Database</a> <a href="/tags/Deployment/" style="font-size: 10px;">Deployment</a> <a href="/tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="/tags/Distributed/" style="font-size: 10px;">Distributed</a> <a href="/tags/Efficiency/" style="font-size: 10px;">Efficiency</a> <a href="/tags/Erlang/" style="font-size: 15.71px;">Erlang</a> <a href="/tags/GC/" style="font-size: 10px;">GC</a> <a href="/tags/Generic/" style="font-size: 10px;">Generic</a> <a href="/tags/Git/" style="font-size: 10px;">Git</a> <a href="/tags/Intellij-Idea/" style="font-size: 10px;">Intellij Idea</a> <a href="/tags/J2ee/" style="font-size: 17.14px;">J2ee</a> <a href="/tags/JVM/" style="font-size: 10px;">JVM</a> <a href="/tags/Java/" style="font-size: 17.14px;">Java</a> <a href="/tags/JavaBean/" style="font-size: 10px;">JavaBean</a> <a href="/tags/Life/" style="font-size: 10px;">Life</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Memorty/" style="font-size: 10px;">Memorty</a> <a href="/tags/Memory/" style="font-size: 15.71px;">Memory</a> <a href="/tags/MySQL/" style="font-size: 10px;">MySQL</a> <a href="/tags/NAT/" style="font-size: 10px;">NAT</a> <a href="/tags/Network/" style="font-size: 14.29px;">Network</a> <a href="/tags/Object-oriented/" style="font-size: 10px;">Object-oriented</a> <a href="/tags/Optimize/" style="font-size: 11.43px;">Optimize</a> <a href="/tags/REST/" style="font-size: 10px;">REST</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/Release/" style="font-size: 10px;">Release</a> <a href="/tags/SEQ/" style="font-size: 10px;">SEQ</a> <a href="/tags/SPI/" style="font-size: 10px;">SPI</a> <a href="/tags/SSL-TLS/" style="font-size: 11.43px;">SSL/TLS</a> <a href="/tags/SSO/" style="font-size: 10px;">SSO</a> <a href="/tags/Security/" style="font-size: 12.86px;">Security</a> <a href="/tags/Session/" style="font-size: 11.43px;">Session</a> <a href="/tags/Shell/" style="font-size: 10px;">Shell</a> <a href="/tags/Shiro/" style="font-size: 15.71px;">Shiro</a> <a href="/tags/Sort/" style="font-size: 10px;">Sort</a> <a href="/tags/Source-codes-analysis/" style="font-size: 17.14px;">Source codes analysis</a> <a href="/tags/Spring-MVC/" style="font-size: 11.43px;">Spring MVC</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/Test/" style="font-size: 10px;">Test</a> <a href="/tags/Tomcat/" style="font-size: 10px;">Tomcat</a> <a href="/tags/Tools/" style="font-size: 18.57px;">Tools</a> <a href="/tags/Ubuntu/" style="font-size: 10px;">Ubuntu</a> <a href="/tags/Vim/" style="font-size: 10px;">Vim</a> <a href="/tags/Xss/" style="font-size: 10px;">Xss</a> <a href="/tags/Zookeeper/" style="font-size: 12.86px;">Zookeeper</a> <a href="/tags/ets/" style="font-size: 10px;">ets</a> <a href="/tags/热更新/" style="font-size: 10px;">热更新</a> <a href="/tags/高并发/" style="font-size: 10px;">高并发</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.bootcss.com/mathjax/2.7.4/latest.js">
+</script>
+</body>
+</html>

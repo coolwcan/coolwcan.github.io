@@ -1,0 +1,398 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Zookeeper | coolwcan</title>
+  <meta name="author" content="coolwcan">
+  
+  <meta name="description" content="0. Zookeeper介绍Zookeeper是一个分布式的，开放源码的分布式应用程序协调服务。其维护了一个类似Linux文件系统，但比它更简单，支持分布式的文件系统，能够保证对于节点的操作具有原子性，并且能够保证集群中所有服务器都具有相同的数据。有如下优点:
+
+原子性更新只能成功或者失败，没有中间">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Zookeeper"/>
+  <meta property="og:site_name" content="coolwcan"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="//images/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="coolwcan" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//libs.baidu.com/jquery/1.8.0/jquery.min.js"></script>
+  <script>
+	$(function() {
+		$(".search").keydown(function(e){
+			if (e.keyCode==13) {
+                // var path = "/search.xml";
+                // searchFunc(path, 'local-search-input', 'local-search-result');
+			}
+		});
+	})
+
+    'use strict';
+	var search_id = 'local-search-input'
+    var content_id = 'local-search-result'
+    $.ajax({
+        url: '/search.xml',
+        dataType: "xml",
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                $resultContent.style.display = 'none'
+                var str='<ul class=\"entry search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length <= 0) {
+                    return;
+                }
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title !== '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            if( index_title < 0){
+                                isMatch = false;
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        str += "<li><a href='"+ data_url +"' class='search-result-title' target='_blank'>"+ "> " + data_title +"</a>";
+                    }
+                })
+                $resultContent.innerHTML = str;
+                if (str && str.length > 0) {
+                    $resultContent.style.display = 'block'
+                }
+            })
+        }
+    })
+
+
+  </script>
+</head>
+
+
+<body>
+  <header><div>
+    <nav class="animated">
+        <ul>
+            
+            <li><a href="/">Home</a></li>
+            
+            <li><a href="/about">About</a></li>
+            
+            <li><a href="/atom.xml">RSS</a></li>
+        </ul>
+    </nav>
+</div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header class="article-info clearfix">
+	<h1 itemprop="name">
+		Zookeeper
+	</h1>
+</header>
+    <div class="entry">
+        <h3 id="0-_Zookeeper介绍">0. Zookeeper介绍</h3><p>Zookeeper是一个分布式的，开放源码的分布式应用程序协调服务。其维护了一个类似Linux文件系统，但比它更简单，支持分布式的文件系统，能够保证对于节点的操作具有原子性，并且能够保证集群中所有服务器都具有相同的数据。有如下优点:</p>
+<ol>
+<li>原子性<br>更新只能成功或者失败，没有中间状态</li>
+<li>顺序性<br>包括全局有序和偏序两种：全局有序是指如果在一台服务器上消息a在消息b前发布，则在所有Server上消息a都将在消息b前被发布；偏序是指如果一个消息b在消息a后被同一个发送者发布，a必将排在b前面</li>
+<li>最终一致性(单系统镜像)<br>Client不论连接到哪个Server，都能看到完全一致的数据</li>
+<li>等待无关<br>慢的或者失效的Client不得干预快速的Client的请求，使得每个Client都能有效的等待</li>
+<li>可靠性<br>具有简单、健壮、良好的性能，如果消息m被到一台服务器接受，那么它将被所有的服务器接受</li>
+<li>实时性<br>Zookeeper保证客户端将在一个时间间隔范围内获得服务器的更新信息，或者服务器失效的信息</li>
+</ol>
+<p>主要使用Zookeeper完成命名服务、配置管理、同步、组服务。使用的 <strong>ZAB(ZooKeeper Atomic Broadcast)协议</strong> 作为其数据一致性的算法。其最大的特性就是数据复制，具有如下的优势:</p>
+<ol>
+<li>容错<br>一个节点出错，不致于让整个系统停止工作，别的节点可以接管它的工作</li>
+<li>提高系统的扩展能力<br>把负载分布到多个节点上，或者增加节点来提高系统的负载能力</li>
+<li>提高性能<br>让客户端本地访问就近的节点，提高用户访问速度</li>
+</ol>
+<h3 id="1-_基本概念">1. 基本概念</h3><ul>
+<li>事务<br>Client发出的每一个操作数据的请求，都会包装成一个事务，用 ZXID 唯一标识事务。</li>
+<li>ZXID<br>是64位的数字，高32位代表Leader周期的 epoch 编号，而低32位是一个简单递增的计数器。ZAB 使用 epoch 来区分不同的 Leader 周期</li>
+<li><p>Znode<br>对于文件系统中的每一个层次，称为一个节点。节点能够存储数据，和一些额外的数据:</p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">cZxid: 创建时的事务</span><br><span class="line">   ctime: 创建时间</span><br><span class="line">   mZxid: 修改时的事务</span><br><span class="line">   mtime: 修改时间</span><br><span class="line">   pZxid: 子节点最后一次修改的事务</span><br><span class="line">   cversion: 子节点的修改版本号记录，子节点每修改一次，增加1</span><br><span class="line">   dataVersion： 当前节点的数据的修改记录，每修改一次，增加1</span><br><span class="line">   aclVersion: 用于控制节点的权限</span><br><span class="line">   ephemeralOwner: 如果是临时节点，则记录session id，否则为0</span><br><span class="line">   dataLength: 数据长度</span><br><span class="line">   numChildren: 子节点的个数</span><br></pre></td></tr></table></figure>
+<p>  节点分为四类：<code>PERSISTENT</code>， <code>PERSISTENT_SEQUENTIAL</code>， <code>EPHEMERAL</code>， <code>EPHEMERAL_SEQUENTIAL</code>， 临时指的是Session关闭时，节点将会删除，持久是指是否可以持久化，顺序指的是创建的节点会根据创建时间进行编号，后创建的编号越大，编号一般都跟在名字后面。</p>
+</li>
+<li>Watch<br>客户端能够针对节点添加监听器，当节点改变后，会触发watch，然后会清除watch，即watch是一次性的，而且watch能够保证事件的顺序性。watch分为两类，数据监听器和子节点监听器。</li>
+<li>Session<br>客户端和服务端建立连接后，会话随之建立，生成一个全局唯一的会话ID(Session ID)，服务器与客户端建立TCP长连接。</li>
+<li>ACL<br>Access Controller List，用于控制对于节点的访问，类似于unix中的<code>allow/disallow</code></li>
+</ul>
+<h3 id="2-_常量">2. 常量</h3><ol>
+<li>当节点的类型为<code>PERSISTENT_SEQUENTIAL</code>, <code>EPHEMERAL_SEQUENTIAL</code>，序号从<strong>0000000001 ~ 2147483647</strong>，格式为<code>%10d</code></li>
+<li>节点数据不能超过 1M</li>
+<li>最多接受来自服务器的数据大小为 4M</li>
+<li>默认的session的过期时间，2 ~ 20 个 tickTime</li>
+</ol>
+<h3 id="3-_常见的使用场景">3. 常见的使用场景</h3><ol>
+<li>命名服务<br>Zookeeper 提供了一套简单的文件系统，当在同一个路径下再次创建节点时，会出错，就能保证每一个路径的唯一性。而命名服务，需要保证每一个名字的唯一性，可以通过文件系统路径的唯一性去保证。</li>
+<li>配置管理<br>将一些小的配置放到 Zookeeper 上，因为每个 Zookeeper 服务器所看到的数据都是一致的，并且能够一致更新，从而达到动态配置的目的。</li>
+<li><p>同步<br>利用 Zookeeper 实现分布式锁。其实现锁有以下几种方式:</p>
+<ol>
+<li>利用节点名称的唯一性来实现共享锁<br>在同一个路径下去同时去创建节点，谁创建成功，则获得锁，使用完后，再删除节点；否则就监听该节点，当删除时，再次去尝试创建。利用 Zookeeper 操作的原子性。如果该节点下的 watcher 很多的话，当释放锁时，会有很多线程同时去创建锁，效率不高。</li>
+<li>利用临时顺序节点实现共享锁的一般做法<br>首先创建一个节点(例如 /distribute_lock)，所有客户端在它下面创建临时顺序 (EPHEMERAL_SEQUENTIAL) 节点，例如(/distribute_lock/guid-lock-)，同时在这个节点上注册上子节点变更通知的 Watcher，客户端调用 getChildren(“/distribute_lock”)，如果发现自己创建的节点的序号最小，则获得锁，否则就等待锁被释放，然后每一次变更都比较一下，自己的序号是否为最小。如果子节点很多的话，会有很多无用的 watch 事件。</li>
+<li>利用临时顺序节点实现共享锁的改进实现<br>与方法二类似，只是在 watch 时，只关注节点顺序比自己小 1 的节点的事件。</li>
+</ol>
+</li>
+<li>组服务<br>主要体现在于 Zookeeper 对集群的管理，而对集群的管理，主要需要解决如下两个问题:<ol>
+<li>动态观察是否有服务器退出和加入集群<br>在一个约定目录下，创建临时节点，并且监听该目录的变化，如果掉线，则节点会被删除，那么同时，其它服务器会收到其宕机的消息。</li>
+<li>选举master<br>同样在一个约定目录下，创建临时有序节点，每次选取编号最小的机器作为master就好。</li>
+</ol>
+</li>
+<li>队列管理<ol>
+<li>Barrier: 当一个队列的成员都聚齐时，这个队列才可用，否则一直等待<br>在约定目录下创建临时目录节点，监听目录节点数是否和我们要求的数目一致</li>
+<li>队列按照 FIFO 方式进行入队和出队的操作<br>在约定上当下创建临时顺序目录节点，出队按编号最小的原则出队</li>
+</ol>
+</li>
+</ol>
+<h3 id="4-_ZAB协议">4. ZAB协议</h3><p>ZAB协议是作为Zookeeper一致性复制的核心。除了保证数据一致性之外，还需要满足以下的两个安全属性:</p>
+<ol>
+<li>全序<br>Total Order, 如果消息a 在消息b 之前发送，则所有 Server 应该看到相同的结果</li>
+<li>因果顺序<br>Causal Order, 如果消息a 在消息b 之前发生，并被一起发送，则a始终在b之前被执行</li>
+</ol>
+<p>在ZAB协议中使用了TCP协议和Leader机制。通过TCP协议保证了消息的全序特性，利用Leader机制保证了因果顺序。因为所有的操作数据的操作都将通过TCP协议发给Leader，而Leader只有一个。整个ZAB协议分成四个阶段: 选举(election)、发现(discovery)、同步(sync)、广播(Broadcast)。通常根据状态分为崩溃恢复模式和消息广播模式。ZAB协议中存在三种状态: Looking(处于选举状态)、Following(当前节点是跟随者)、Leading(当前节点是 Leader， 负责协调事务)。</p>
+<h4 id="4-1_崩溃恢复模式">4.1 崩溃恢复模式</h4><ol>
+<li><p>选举<br>必须确保选出的 Leader 具有最高的 ZXID 。选举流程如下:</p>
+<ol>
+<li>每个 Follower 都向其他节点发送选自身成为 Leader 的投票请求，并带上自己最新的 ZXID；</li>
+<li>Follower 接受到的 ZXID 如果比自身的大时则投票，并记录，否则拒绝投票；</li>
+<li>每个 Follower 中维护着一个投票记录表，当某个节点收到过半的投票时，结束投票并把该 Follower 选为 Leader；</li>
+</ol>
+</li>
+<li><p>发现<br>当选出最新的 Leader 后，Leader 将生成新的 epoch，让 Follower 接受最新的 acceptedEpoch。并且接收 Follower 发过来的 FOLLOWERINFO (含有当前节点的最新的 ZXID)，发现大多数节点接收的最新提议。</p>
+</li>
+<li><p>同步<br>Leader 利用前一阶段获得的最新提交记录，与 Follower 同步数据。同步策略如下:</p>
+<ol>
+<li>SNAP<br>如果 Follower 数据太老， Leader 将发送快照 SNAP 指令给 Follower 同步数据</li>
+<li>DIFF<br>Leader 发送从 Follower 的 LastZXID 到 Leader 的 LastZXID 的 DIFF 指令给 Follower，以同步数据。</li>
+<li>TRUNC<br>当 Follower 的 LastZXID 比 Leader 的 LastZXID 大时，Leader 发送从 Leader 的 LastZXID 到 Follower 的 LastZXID 的 Trunc 指令，让 Follower 丢弃该段数据</li>
+</ol>
+<p>SNAP 与 DIFF 指令用于保证集群中的 Follower 节点与已经 Committed 数据一致， TRUNC 用于抛弃已经被处理但是没有 Committed 的数据。当集群中大多数 Follower 同步成功后，再会真正成为 Leader。</p>
+</li>
+<li><p>ZAB崩溃恢复的策略:</p>
+<ol>
+<li>ZAB协议需要确保那些已经在 Leader 服务器上提交的事务最终被所有服务器都提交<br>假设一个事务在 Leader 服务器上被提交了，并且已经得到了过半 Follower 服务器的 Ack 反馈，此时 Leader 已经提交，但是在它将 Commit 消息发送给所有 Follower 机器之前，Leader 服务器挂了，恢复过程中则需要恢复该操作日志</li>
+<li>ZAB 协议将丢弃那些只在 Leader 服务器上被提出的事务。<br>假设初始的 Leader 服务器 Server 在提出一个事务之后，还没有给 Follower 发送请求，希望得到 Ack 之前，挂了,则要丢弃该事务</li>
+</ol>
+</li>
+</ol>
+<h4 id="4-2_消息广播模式">4.2 消息广播模式</h4><ol>
+<li>Leader 服务器会为事务请求生成一个全局唯一递增的事务ID（即ZXID），保证每个消息的因果关系的顺序。</li>
+<li>Leader 服务器会为该事务生成对应的 Proposal，进行广播。</li>
+<li>Leader 服务器会为每一个 Follower 服务器都各自分配一个单独的队列，将需要广播的事务 Proposal 依次放入这些队列中去，并根据 FIFO 策略进行消息发送。</li>
+<li>每一个 Follower 服务器在接收到这个事务 Proposal 之后，首先以日志形式写入本地磁盘，并且成功写入后反馈给 Leader 服务器一个 Ack 响应</li>
+<li>当 Leader 服务器接收超过半数的 Follower 的 Ack 响应，Leader 自身也会完成对事务的提交。同时就会广播一个 Commit 消息给所有的Follower 服务器以通知进行事务提交。每一个 Follower 服务器在接收到 Commit 消息后，也会完成对事务的提交。</li>
+</ol>
+<p>消息广播过程中使用了 TCP 协议进行通讯所有保证了接受和发送事务的顺序性。</p>
+<h3 id="5-_常见问题">5. 常见问题</h3><ul>
+<li><p>为什么要限制ZooKeeper中ZNode的大小？<br>ZooKeeper 是一套高吞吐量的系统，为了提高系统的读取速度，ZooKeeper 不允许从文件中读取需要的数据，而是直接从内存中查找。换句话说，ZooKeeper 集群中每一台服务器都包含全量的数据，并且这些数据都会加载到内存中。同时 ZNode 的数据不支持 Append 操作，全部都是Replace。所以从上面分析可以看出，如果 ZNode 过大，那么读写某一个 ZNode 将造成不确定的延时; 同时 ZNode 过大，将过快地耗尽ZooKeeper 服务器的内存。</p>
+</li>
+<li><p>ZAB 与 Paxos 的关系与区别<br>ZAB 与 Paxos 算法一样都是一致性算法，而 ZAB 同时解决了全序与因果顺序的问题。</p>
+</li>
+</ul>
+
+    </div>
+    <footer>
+        
+	
+	<div class="categories">
+	<a href="/categories/Zookeeper/">Zookeeper</a>
+	</div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Zookeeper/">Zookeeper</a>
+  </div>
+
+        <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+ <nav id="pagination" >
+    
+    <a href="/Zookeeper/Zookeeper/Zookeeper-02-Session/" class="alignleft prev" title="Zookeeper-02-Session">Zookeeper-02-Session</a>
+    
+    
+    <a href="/Zookeeper/Zookeeper/Zookeeper-01-简介/" class="alignright next" title="Zookeeper-01-简介">Zookeeper-01-简介</a>
+    
+    <div class="clearfix"></div>
+</nav>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="widget author-meta">
+    <div class="author-avatar">
+        <img src="/images/author.jpg">
+    </div>
+    <div class="author-name">coolwcan</div>
+    <div class="author-work">Java Developer</div>
+    <div class="author-location">
+        <i class="icon-location"></i>
+        <span>四川成都</span>
+    </div>
+    <div class="social-font">
+        
+        <a href="https://github.com/coolwcan" target="_blank" title="github"></a>
+        
+        
+        <a href="mailto:coolwcan@163.com" target="_blank" class="icon-email" title="email"></a>
+        
+    </div>
+</div>
+
+
+  <div class="widget search" style="margin-bottom: 30px">
+    <input id="local-search-input" class="search" type="search" placeholder="搜索">
+    <div id="local-search-result" style="display: none;" class="entry"></div>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    
+        <li><a href="/categories/Algorithm/">Algorithm</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/C-C/">C/C++</a><small>21</small></li>
+    
+  
+    
+        <li><a href="/categories/Coding/">Coding</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Computer/">Computer</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Database/">Database</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/DevOps/">DevOps</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Distributed/">Distributed</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Erlang/">Erlang</a><small>7</small></li>
+    
+  
+    
+        <li><a href="/categories/J2ee/">J2ee</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Java/">Java</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Life/">Life</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Network/">Network</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/Security/">Security</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/Shiro/">Shiro</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Tools/">Tools</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Web/">Web</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Zookeeper/">Zookeeper</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/配置中心/">配置中心</a><small>1</small></li>
+    
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/ACK/" style="font-size: 10px;">ACK</a> <a href="/tags/Archlinux/" style="font-size: 10px;">Archlinux</a> <a href="/tags/Arrays/" style="font-size: 10px;">Arrays</a> <a href="/tags/Base64/" style="font-size: 10px;">Base64</a> <a href="/tags/C-C/" style="font-size: 20px;">C/C++</a> <a href="/tags/CRC/" style="font-size: 10px;">CRC</a> <a href="/tags/Cache/" style="font-size: 10px;">Cache</a> <a href="/tags/Centos/" style="font-size: 10px;">Centos</a> <a href="/tags/Chrome/" style="font-size: 10px;">Chrome</a> <a href="/tags/Class/" style="font-size: 10px;">Class</a> <a href="/tags/Coding/" style="font-size: 10px;">Coding</a> <a href="/tags/Collection/" style="font-size: 11.43px;">Collection</a> <a href="/tags/Compile/" style="font-size: 10px;">Compile</a> <a href="/tags/Compiler/" style="font-size: 10px;">Compiler</a> <a href="/tags/Computer/" style="font-size: 11.43px;">Computer</a> <a href="/tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="/tags/DDos/" style="font-size: 10px;">DDos</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Database/" style="font-size: 10px;">Database</a> <a href="/tags/Deployment/" style="font-size: 10px;">Deployment</a> <a href="/tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="/tags/Distributed/" style="font-size: 10px;">Distributed</a> <a href="/tags/Efficiency/" style="font-size: 10px;">Efficiency</a> <a href="/tags/Erlang/" style="font-size: 15.71px;">Erlang</a> <a href="/tags/GC/" style="font-size: 10px;">GC</a> <a href="/tags/Generic/" style="font-size: 10px;">Generic</a> <a href="/tags/Git/" style="font-size: 10px;">Git</a> <a href="/tags/Intellij-Idea/" style="font-size: 10px;">Intellij Idea</a> <a href="/tags/J2ee/" style="font-size: 17.14px;">J2ee</a> <a href="/tags/JVM/" style="font-size: 10px;">JVM</a> <a href="/tags/Java/" style="font-size: 17.14px;">Java</a> <a href="/tags/JavaBean/" style="font-size: 10px;">JavaBean</a> <a href="/tags/Life/" style="font-size: 10px;">Life</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Memorty/" style="font-size: 10px;">Memorty</a> <a href="/tags/Memory/" style="font-size: 15.71px;">Memory</a> <a href="/tags/MySQL/" style="font-size: 10px;">MySQL</a> <a href="/tags/NAT/" style="font-size: 10px;">NAT</a> <a href="/tags/Network/" style="font-size: 14.29px;">Network</a> <a href="/tags/Object-oriented/" style="font-size: 10px;">Object-oriented</a> <a href="/tags/Optimize/" style="font-size: 11.43px;">Optimize</a> <a href="/tags/REST/" style="font-size: 10px;">REST</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/Release/" style="font-size: 10px;">Release</a> <a href="/tags/SEQ/" style="font-size: 10px;">SEQ</a> <a href="/tags/SPI/" style="font-size: 10px;">SPI</a> <a href="/tags/SSL-TLS/" style="font-size: 11.43px;">SSL/TLS</a> <a href="/tags/SSO/" style="font-size: 10px;">SSO</a> <a href="/tags/Security/" style="font-size: 12.86px;">Security</a> <a href="/tags/Session/" style="font-size: 11.43px;">Session</a> <a href="/tags/Shell/" style="font-size: 10px;">Shell</a> <a href="/tags/Shiro/" style="font-size: 15.71px;">Shiro</a> <a href="/tags/Sort/" style="font-size: 10px;">Sort</a> <a href="/tags/Source-codes-analysis/" style="font-size: 17.14px;">Source codes analysis</a> <a href="/tags/Spring-MVC/" style="font-size: 11.43px;">Spring MVC</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/Test/" style="font-size: 10px;">Test</a> <a href="/tags/Tomcat/" style="font-size: 10px;">Tomcat</a> <a href="/tags/Tools/" style="font-size: 18.57px;">Tools</a> <a href="/tags/Ubuntu/" style="font-size: 10px;">Ubuntu</a> <a href="/tags/Vim/" style="font-size: 10px;">Vim</a> <a href="/tags/Xss/" style="font-size: 10px;">Xss</a> <a href="/tags/Zookeeper/" style="font-size: 12.86px;">Zookeeper</a> <a href="/tags/ets/" style="font-size: 10px;">ets</a> <a href="/tags/热更新/" style="font-size: 10px;">热更新</a> <a href="/tags/高并发/" style="font-size: 10px;">高并发</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.bootcss.com/mathjax/2.7.4/latest.js">
+</script>
+</body>
+</html>

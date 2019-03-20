@@ -1,0 +1,326 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>DDoS | coolwcan</title>
+  <meta name="author" content="coolwcan">
+  
+  <meta name="description" content="一. DDoS攻击DDoS攻击(分布式拒绝服务攻击), 是拒绝服务(DoS)的一种，用分布式的客户端，向服务提供者发起大量看似合法的请求，消耗或长期占用大量资源，从而达到拒绝服务的目的。
+二. 攻击方式1. 消耗网络宽带资源：互联网基础设施的数据包处理能力都是存在上限的，攻击者发送大量网络数据包，使">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="DDoS"/>
+  <meta property="og:site_name" content="coolwcan"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="//images/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="coolwcan" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//libs.baidu.com/jquery/1.8.0/jquery.min.js"></script>
+  <script>
+	$(function() {
+		$(".search").keydown(function(e){
+			if (e.keyCode==13) {
+                // var path = "/search.xml";
+                // searchFunc(path, 'local-search-input', 'local-search-result');
+			}
+		});
+	})
+
+    'use strict';
+	var search_id = 'local-search-input'
+    var content_id = 'local-search-result'
+    $.ajax({
+        url: '/search.xml',
+        dataType: "xml",
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                $resultContent.style.display = 'none'
+                var str='<ul class=\"entry search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length <= 0) {
+                    return;
+                }
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title !== '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            if( index_title < 0){
+                                isMatch = false;
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        str += "<li><a href='"+ data_url +"' class='search-result-title' target='_blank'>"+ "> " + data_title +"</a>";
+                    }
+                })
+                $resultContent.innerHTML = str;
+                if (str && str.length > 0) {
+                    $resultContent.style.display = 'block'
+                }
+            })
+        }
+    })
+
+
+  </script>
+</head>
+
+
+<body>
+  <header><div>
+    <nav class="animated">
+        <ul>
+            
+            <li><a href="/">Home</a></li>
+            
+            <li><a href="/about">About</a></li>
+            
+            <li><a href="/atom.xml">RSS</a></li>
+        </ul>
+    </nav>
+</div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header class="article-info clearfix">
+	<h1 itemprop="name">
+		DDoS
+	</h1>
+</header>
+    <div class="entry">
+        <h2 id="一-_DDoS攻击">一. DDoS攻击</h2><p>DDoS攻击(分布式拒绝服务攻击), 是拒绝服务(DoS)的一种，用分布式的客户端，向服务提供者发起大量看似合法的请求，消耗或长期占用大量资源，从而达到拒绝服务的目的。</p>
+<h2 id="二-_攻击方式">二. 攻击方式</h2><h4 id="1-_消耗网络宽带资源：">1. 消耗网络宽带资源：</h4><p>互联网基础设施的数据包处理能力都是存在上限的，攻击者发送大量网络数据包，使正常请求无法得到正常. 有效的响应，造成服务拒绝。  </p>
+<ol>
+<li>直接攻击：使用大量受控主机直接向攻击目标发送大量数据包，达到服务拒绝的目的。常见的有ICMP/IGMP洪水攻击，与UDP攻击，不过攻击者容易被发现。</li>
+<li>反射攻击：又称为DRDoS，攻击者伪装成受害人，欺骗路由器或服务器产生大量响应，进而攻击受害者；ACK应答，DNS响应数据，NTP及SNMP等协议的响应数据等都可以成为攻击方式<center><img src="/pics/ddos-1.jpg" alt=""></center></li>
+<li>攻击链路：与其它攻击方式有所不同，其攻击的目标并不是作为互联网端点的服务器的宽带资源，而是骨干网上的链路的宽带资源<center><img src="/pics/ddos-2.jpg" alt=""></center>
+
+</li>
+</ol>
+<h4 id="2-_消耗系统资源">2. 消耗系统资源</h4><p>终端设备与服务器进行通信时，会大量使用系统资源。DDoS通过人为增加连接资源进行消耗和占用，阻止正常连接的建立，从而达到拒绝服务的目的。攻击TCP连接：</p>
+<ol>
+<li>TCP的三次握手<center><img src="/pics/ddos-3.jpg" alt=""></center></li>
+<li>SYN洪水攻击：是最经典的一种形式，通过短时间内产生大量的TCP半开连接，实现攻击</li>
+<li>攻击SSL连接：安全套接层(SSL)协议密钥协商。加密和解密的过程中消耗大量的系统资源，这也达成了攻击的目标。攻击者只需要让服务器不停地去解密和验证，就能够产生大量消耗服务器的计算资源。</li>
+</ol>
+<h4 id="3-_消耗应用资源">3. 消耗应用资源</h4><p>消耗应用资源的DDoS正逐渐成为拒绝服务攻击的主要手段之一。而由于DNS和Web服务的广泛性和重要性，这两种服务也成为了消耗应用资源的分布式拒绝服务攻击的最主要的攻击目标。</p>
+<ol>
+<li>攻击DNS服务：在DNS解析的过程中，客户端发起一次查询请求，DNS服务器可能需要进行额外的多次查询才能给出应答，常见的DNS Query与DNS NXDomain两种攻击。而DNS NXDomain会消耗更多的DNS本地缓存，危害更大。</li>
+<li>攻击Web服务：<ol>
+<li>大量正常的HTTP请求</li>
+<li>不完整的HTTP请求</li>
+<li>慢速的HTTP长连接</li>
+<li>构造恶意的HTTP请求</li>
+</ol>
+</li>
+</ol>
+<h2 id="三-_防范：">三. 防范：</h2><p>过滤网络，过滤出正常的请求</p>
+
+    </div>
+    <footer>
+        
+	
+	<div class="categories">
+	<a href="/categories/Security/">Security</a>
+	</div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Security/">Security</a>, <a href="/tags/DDos/">DDos</a>
+  </div>
+
+        <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+ <nav id="pagination" >
+    
+    <a href="/Security/Security/Xss攻击/" class="alignleft prev" title="Xss攻击">Xss攻击</a>
+    
+    
+    <a href="/Security/Security/SSL Pining/" class="alignright next" title="SSL Pining">SSL Pining</a>
+    
+    <div class="clearfix"></div>
+</nav>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="widget author-meta">
+    <div class="author-avatar">
+        <img src="/images/author.jpg">
+    </div>
+    <div class="author-name">coolwcan</div>
+    <div class="author-work">Java Developer</div>
+    <div class="author-location">
+        <i class="icon-location"></i>
+        <span>四川成都</span>
+    </div>
+    <div class="social-font">
+        
+        <a href="https://github.com/coolwcan" target="_blank" title="github"></a>
+        
+        
+        <a href="mailto:coolwcan@163.com" target="_blank" class="icon-email" title="email"></a>
+        
+    </div>
+</div>
+
+
+  <div class="widget search" style="margin-bottom: 30px">
+    <input id="local-search-input" class="search" type="search" placeholder="搜索">
+    <div id="local-search-result" style="display: none;" class="entry"></div>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    
+        <li><a href="/categories/Algorithm/">Algorithm</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/C-C/">C/C++</a><small>21</small></li>
+    
+  
+    
+        <li><a href="/categories/Coding/">Coding</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Computer/">Computer</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Database/">Database</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/DevOps/">DevOps</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Distributed/">Distributed</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Erlang/">Erlang</a><small>7</small></li>
+    
+  
+    
+        <li><a href="/categories/J2ee/">J2ee</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Java/">Java</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Life/">Life</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Network/">Network</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/Security/">Security</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/Shiro/">Shiro</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Tools/">Tools</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Web/">Web</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Zookeeper/">Zookeeper</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/配置中心/">配置中心</a><small>1</small></li>
+    
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/ACK/" style="font-size: 10px;">ACK</a> <a href="/tags/Archlinux/" style="font-size: 10px;">Archlinux</a> <a href="/tags/Arrays/" style="font-size: 10px;">Arrays</a> <a href="/tags/Base64/" style="font-size: 10px;">Base64</a> <a href="/tags/C-C/" style="font-size: 20px;">C/C++</a> <a href="/tags/CRC/" style="font-size: 10px;">CRC</a> <a href="/tags/Cache/" style="font-size: 10px;">Cache</a> <a href="/tags/Centos/" style="font-size: 10px;">Centos</a> <a href="/tags/Chrome/" style="font-size: 10px;">Chrome</a> <a href="/tags/Class/" style="font-size: 10px;">Class</a> <a href="/tags/Coding/" style="font-size: 10px;">Coding</a> <a href="/tags/Collection/" style="font-size: 11.43px;">Collection</a> <a href="/tags/Compile/" style="font-size: 10px;">Compile</a> <a href="/tags/Compiler/" style="font-size: 10px;">Compiler</a> <a href="/tags/Computer/" style="font-size: 11.43px;">Computer</a> <a href="/tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="/tags/DDos/" style="font-size: 10px;">DDos</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Database/" style="font-size: 10px;">Database</a> <a href="/tags/Deployment/" style="font-size: 10px;">Deployment</a> <a href="/tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="/tags/Distributed/" style="font-size: 10px;">Distributed</a> <a href="/tags/Efficiency/" style="font-size: 10px;">Efficiency</a> <a href="/tags/Erlang/" style="font-size: 15.71px;">Erlang</a> <a href="/tags/GC/" style="font-size: 10px;">GC</a> <a href="/tags/Generic/" style="font-size: 10px;">Generic</a> <a href="/tags/Git/" style="font-size: 10px;">Git</a> <a href="/tags/Intellij-Idea/" style="font-size: 10px;">Intellij Idea</a> <a href="/tags/J2ee/" style="font-size: 17.14px;">J2ee</a> <a href="/tags/JVM/" style="font-size: 10px;">JVM</a> <a href="/tags/Java/" style="font-size: 17.14px;">Java</a> <a href="/tags/JavaBean/" style="font-size: 10px;">JavaBean</a> <a href="/tags/Life/" style="font-size: 10px;">Life</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Memorty/" style="font-size: 10px;">Memorty</a> <a href="/tags/Memory/" style="font-size: 15.71px;">Memory</a> <a href="/tags/MySQL/" style="font-size: 10px;">MySQL</a> <a href="/tags/NAT/" style="font-size: 10px;">NAT</a> <a href="/tags/Network/" style="font-size: 14.29px;">Network</a> <a href="/tags/Object-oriented/" style="font-size: 10px;">Object-oriented</a> <a href="/tags/Optimize/" style="font-size: 11.43px;">Optimize</a> <a href="/tags/REST/" style="font-size: 10px;">REST</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/Release/" style="font-size: 10px;">Release</a> <a href="/tags/SEQ/" style="font-size: 10px;">SEQ</a> <a href="/tags/SPI/" style="font-size: 10px;">SPI</a> <a href="/tags/SSL-TLS/" style="font-size: 11.43px;">SSL/TLS</a> <a href="/tags/SSO/" style="font-size: 10px;">SSO</a> <a href="/tags/Security/" style="font-size: 12.86px;">Security</a> <a href="/tags/Session/" style="font-size: 11.43px;">Session</a> <a href="/tags/Shell/" style="font-size: 10px;">Shell</a> <a href="/tags/Shiro/" style="font-size: 15.71px;">Shiro</a> <a href="/tags/Sort/" style="font-size: 10px;">Sort</a> <a href="/tags/Source-codes-analysis/" style="font-size: 17.14px;">Source codes analysis</a> <a href="/tags/Spring-MVC/" style="font-size: 11.43px;">Spring MVC</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/Test/" style="font-size: 10px;">Test</a> <a href="/tags/Tomcat/" style="font-size: 10px;">Tomcat</a> <a href="/tags/Tools/" style="font-size: 18.57px;">Tools</a> <a href="/tags/Ubuntu/" style="font-size: 10px;">Ubuntu</a> <a href="/tags/Vim/" style="font-size: 10px;">Vim</a> <a href="/tags/Xss/" style="font-size: 10px;">Xss</a> <a href="/tags/Zookeeper/" style="font-size: 12.86px;">Zookeeper</a> <a href="/tags/ets/" style="font-size: 10px;">ets</a> <a href="/tags/热更新/" style="font-size: 10px;">热更新</a> <a href="/tags/高并发/" style="font-size: 10px;">高并发</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.bootcss.com/mathjax/2.7.4/latest.js">
+</script>
+</body>
+</html>

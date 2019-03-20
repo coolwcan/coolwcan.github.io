@@ -1,0 +1,371 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Zookeeper-02-Session | coolwcan</title>
+  <meta name="author" content="coolwcan">
+  
+  <meta name="description" content="0. 简介在对 Zookeeper 的使用过程中，经常会用到临时节点，而临时节点与 Session 相关，那么 Session 在 Zookeeper 中到底是怎样的一个概念呢？会从如下几个角度去看:
+
+Session 的创建
+Session 的关闭
+Session 的过期
+
+在 Zookeeper">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Zookeeper-02-Session"/>
+  <meta property="og:site_name" content="coolwcan"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="//images/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="coolwcan" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//libs.baidu.com/jquery/1.8.0/jquery.min.js"></script>
+  <script>
+	$(function() {
+		$(".search").keydown(function(e){
+			if (e.keyCode==13) {
+                // var path = "/search.xml";
+                // searchFunc(path, 'local-search-input', 'local-search-result');
+			}
+		});
+	})
+
+    'use strict';
+	var search_id = 'local-search-input'
+    var content_id = 'local-search-result'
+    $.ajax({
+        url: '/search.xml',
+        dataType: "xml",
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                $resultContent.style.display = 'none'
+                var str='<ul class=\"entry search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length <= 0) {
+                    return;
+                }
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title !== '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            if( index_title < 0){
+                                isMatch = false;
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        str += "<li><a href='"+ data_url +"' class='search-result-title' target='_blank'>"+ "> " + data_title +"</a>";
+                    }
+                })
+                $resultContent.innerHTML = str;
+                if (str && str.length > 0) {
+                    $resultContent.style.display = 'block'
+                }
+            })
+        }
+    })
+
+
+  </script>
+</head>
+
+
+<body>
+  <header><div>
+    <nav class="animated">
+        <ul>
+            
+            <li><a href="/">Home</a></li>
+            
+            <li><a href="/about">About</a></li>
+            
+            <li><a href="/atom.xml">RSS</a></li>
+        </ul>
+    </nav>
+</div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header class="article-info clearfix">
+	<h1 itemprop="name">
+		Zookeeper-02-Session
+	</h1>
+</header>
+    <div class="entry">
+        <h3 id="0-_简介">0. 简介</h3><p>在对 <code>Zookeeper</code> 的使用过程中，经常会用到临时节点，而临时节点与 <code>Session</code> 相关，那么 <code>Session</code> 在 <code>Zookeeper</code> 中到底是怎样的一个概念呢？会从如下几个角度去看:</p>
+<ol>
+<li>Session 的创建</li>
+<li>Session 的关闭</li>
+<li>Session 的过期</li>
+</ol>
+<p>在 <code>Zookeeper</code> 找到了一个与 <code>Session</code> 相关的接口如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">public interface SessionTracker &#123;</span><br><span class="line">    public static interface Session &#123;</span><br><span class="line">        long getSessionId();</span><br><span class="line">        int getTimeout();</span><br><span class="line">        boolean isClosing();</span><br><span class="line">    &#125;</span><br><span class="line">    public static interface SessionExpirer &#123;</span><br><span class="line">        void expire(Session session);</span><br><span class="line">        long getServerId();</span><br><span class="line">    &#125;</span><br><span class="line">    long createSession(int sessionTimeout);</span><br><span class="line">    boolean addGlobalSession(long id, int to);</span><br><span class="line">    boolean addSession(long id, int to);</span><br><span class="line">    boolean touchSession(long sessionId, int sessionTimeout);</span><br><span class="line">    void setSessionClosing(long sessionId);</span><br><span class="line">    void shutdown();</span><br><span class="line">    void removeSession(long sessionId);</span><br><span class="line">    boolean isTrackingSession(long sessionId);</span><br><span class="line">    public void checkSession(long sessionId, Object owner)</span><br><span class="line">            throws KeeperException.SessionExpiredException,</span><br><span class="line">            KeeperException.SessionMovedException,</span><br><span class="line">            KeeperException.UnknownSessionException;</span><br><span class="line">    public void checkGlobalSession(long sessionId, Object owner)</span><br><span class="line">            throws KeeperException.SessionExpiredException,</span><br><span class="line">            KeeperException.SessionMovedException;</span><br><span class="line">    void setOwner(long id, Object owner) throws SessionExpiredException;</span><br><span class="line">    void dumpSessions(PrintWriter pwriter);</span><br><span class="line">    Map&lt;Long, Set&lt;Long&gt;&gt; getSessionExpiryMap();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>SessionTracker</code> 中的<code>Session</code> 这个接口，相对于 <code>Web</code> 中的 <code>Session</code>, 其功能是很弱的，感觉仅仅标记了一个 <code>Session</code> 而已。在查看资料时，发现如下的一个状态图:</p>
+<center><img src="/pics/Zookeeper-Session-Status.jpg" alt=""></center>
+
+<p>其它的状态没什么可以说的，但是需要注意 <code>CONNECTING</code> 与 <code>CONNECTED</code> 之间存在相互转换的过程，在如下的情况下 <code>Session</code> 将被关闭:</p>
+<ol>
+<li>登录的认证失败</li>
+<li>客户端手动关闭</li>
+<li>连接成功后，由于客户端的操作，导致 <code>Session</code> 过期，此时将重新进入 <code>CONNECTING</code>，在重新连接服务的过程中，连接失败，或者连接成功后，收到了 <code>Session</code> 过期的消息</li>
+</ol>
+<p>在<code>Zookeeper</code> 中的 <code>ClientCnxn</code> 用于负责客户端与服务器的连接、数据传输的相关操作，<code>Session</code> 的创建与关闭都将从该接口相关。</p>
+<h3 id="1-_Session_的创建">1. <code>Session</code> 的创建</h3><p><code>ClientCnxn</code>的构建函数如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public ClientCnxn(String chrootPath, HostProvider hostProvider, int sessionTimeout, ZooKeeper zooKeeper,</span><br><span class="line">        ClientWatchManager watcher, ClientCnxnSocket clientCnxnSocket,</span><br><span class="line">        long sessionId, byte[] sessionPasswd, boolean canBeReadOnly) &#123;</span><br><span class="line">    // ...</span><br><span class="line">    sendThread = new SendThread(clientCnxnSocket);</span><br><span class="line">    eventThread = new EventThread();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到会创建两个线程: <code>SendThread</code> 、<code>EventThread</code>，<code>SendThread</code> 用于负责与服务器的连接操作、心跳、数据传输，而 <code>EventThread</code> 负责处理事件。其<code>SendThread</code> 的 <code>run</code> 方法如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public void run() &#123;</span><br><span class="line">	clientCnxnSocket.introduce(this, sessionId, outgoingQueue);</span><br><span class="line">	clientCnxnSocket.updateNow();</span><br><span class="line">	clientCnxnSocket.updateLastSendAndHeard();</span><br><span class="line">	int to;</span><br><span class="line">	long lastPingRwServer = Time.currentElapsedTime();</span><br><span class="line">	final int MAX_SEND_PING_INTERVAL = 10000; //10 seconds</span><br><span class="line">	while (state.isAlive()) &#123;</span><br><span class="line">		try &#123;</span><br><span class="line">			if (!clientCnxnSocket.isConnected()) &#123;</span><br><span class="line">				// don&apos;t re-establish connection if we are closing</span><br><span class="line">				if (closing) &#123;</span><br><span class="line">					break;</span><br><span class="line">				&#125;</span><br><span class="line">				startConnect();</span><br><span class="line">				clientCnxnSocket.updateLastSendAndHeard();</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">        // ...</span><br><span class="line">	&#125;</span><br><span class="line">    // ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其 <code>startConnect</code> 如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">private void startConnect() throws IOException &#123;</span><br><span class="line">    // ... 获取地址等信息</span><br><span class="line">    clientCnxnSocket.connect(addr);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>只看 <code>ClientCnxnSocketNIO</code> 的实现，如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">void connect(InetSocketAddress addr) throws IOException &#123;</span><br><span class="line">    SocketChannel sock = createSock();</span><br><span class="line">    try &#123;</span><br><span class="line">       registerAndConnect(sock, addr);</span><br><span class="line">  &#125; catch (IOException e) &#123;</span><br><span class="line">        LOG.error(&quot;Unable to open socket to &quot; + addr);</span><br><span class="line">        sock.close();</span><br><span class="line">        throw e;</span><br><span class="line">    &#125;</span><br><span class="line">    // ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其 <code>registerAndConnect</code> 方法如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">void registerAndConnect(SocketChannel sock, InetSocketAddress addr)</span><br><span class="line">    throws IOException &#123;</span><br><span class="line">    sockKey = sock.register(selector, SelectionKey.OP_CONNECT);</span><br><span class="line">    boolean immediateConnect = sock.connect(addr);</span><br><span class="line">    if (immediateConnect) &#123;</span><br><span class="line">        sendThread.primeConnection();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的 <code>register</code> 是 <code>Java NIO</code> 中的 <code>Selector</code> 的相关操作；其 <code>primeConnection</code> 如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">/* *</span><br><span class="line"> * Setup session, previous watches, authentication.</span><br><span class="line"> */</span><br><span class="line">void primeConnection() throws IOException &#123;</span><br><span class="line">	long sessId = (seenRwServerBefore) ? sessionId : 0;</span><br><span class="line">    ConnectRequest conReq = new ConnectRequest(0, lastZxid,</span><br><span class="line">            sessionTimeout, sessId, sessionPasswd);</span><br><span class="line">	// …… 针对 watch 和 auth 相关的处理</span><br><span class="line">    outgoingQueue.addFirst(new Packet(null, null, conReq,</span><br><span class="line">                    null, null, readOnly));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>发起了一个连接请求。接下来，我们来看看服务器收到请求后，是如何处理的。在 <code>Zookeeper</code> 中 <code>ZookeeperServer</code> 代表着服务器，在其中有这样一个函数: <code>processConnectRequest</code> ，通过其名字，能够发现，是用于处理客户端的连接的，其代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">public void processConnectRequest(ServerCnxn cnxn, ByteBuffer incomingBuffer) throws IOException &#123;</span><br><span class="line">    // ... 做校验</span><br><span class="line">    int sessionTimeout = connReq.getTimeOut();</span><br><span class="line">    byte passwd[] = connReq.getPasswd();</span><br><span class="line">    int minSessionTimeout = getMinSessionTimeout();</span><br><span class="line">    if (sessionTimeout &lt; minSessionTimeout) &#123;</span><br><span class="line">        sessionTimeout = minSessionTimeout;</span><br><span class="line">    &#125;</span><br><span class="line">    int maxSessionTimeout = getMaxSessionTimeout();</span><br><span class="line">    if (sessionTimeout &gt; maxSessionTimeout) &#123;</span><br><span class="line">        sessionTimeout = maxSessionTimeout;</span><br><span class="line">    &#125;</span><br><span class="line">    cnxn.setSessionTimeout(sessionTimeout);</span><br><span class="line">    // We don&apos;t want to receive any packets until we are sure that the session is setup</span><br><span class="line">    cnxn.disableRecv();</span><br><span class="line">    long sessionId = connReq.getSessionId();</span><br><span class="line">    if (sessionId == 0) &#123;</span><br><span class="line">        LOG.info(&quot;Client attempting to establish new session at &quot;</span><br><span class="line">                + cnxn.getRemoteSocketAddress());</span><br><span class="line">        createSession(cnxn, passwd, sessionTimeout);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        long clientSessionId = connReq.getSessionId();</span><br><span class="line">        LOG.info(&quot;Client attempting to renew session 0x&quot;</span><br><span class="line">                + Long.toHexString(clientSessionId)</span><br><span class="line">                + &quot; at &quot; + cnxn.getRemoteSocketAddress());</span><br><span class="line">        if (serverCnxnFactory != null) &#123;</span><br><span class="line">            serverCnxnFactory.closeSession(sessionId);</span><br><span class="line">        &#125;</span><br><span class="line">        if (secureServerCnxnFactory != null) &#123;</span><br><span class="line">            secureServerCnxnFactory.closeSession(sessionId);</span><br><span class="line">        &#125;</span><br><span class="line">        cnxn.setSessionId(sessionId);</span><br><span class="line">        reopenSession(cnxn, sessionId, passwd, sessionTimeout);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中 <code>reopenSession</code> 与 <code>Session</code> 重连相关，在这里，我们只看 <code>createSession</code> 函数:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">long createSession(ServerCnxn cnxn, byte passwd[], int timeout) &#123;</span><br><span class="line">    if (passwd == null) &#123;</span><br><span class="line">        // Possible since it&apos;s just deserialized from a packet on the wire.</span><br><span class="line">        passwd = new byte[0];</span><br><span class="line">    &#125;</span><br><span class="line">    long sessionId = sessionTracker.createSession(timeout);</span><br><span class="line">    Random r = new Random(sessionId ^ superSecret);</span><br><span class="line">    r.nextBytes(passwd);</span><br><span class="line">    ByteBuffer to = ByteBuffer.allocate(4);</span><br><span class="line">    to.putInt(timeout);</span><br><span class="line">    cnxn.setSessionId(sessionId);</span><br><span class="line">    Request si = new Request(cnxn, sessionId, 0, OpCode.createSession, to, null);</span><br><span class="line">    setLocalSessionFlag(si);</span><br><span class="line">    submitRequest(si);</span><br><span class="line">    return sessionId;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在 <code>SessionTrackerImpl</code> 的 <code>createSession</code> 就创建了 <code>Session</code> ，而 <code>submitRequest</code> 则是将请求，提交到队列中，通过 <code>RequestProcessor</code> 去处理。在 <code>PrepRequestProcessor</code> 是该处理链的第一个，它是这样处理的:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">protected void pRequest(Request request) throws RequestProcessorException &#123;</span><br><span class="line">	request.setHdr(null);</span><br><span class="line">	request.setTxn(null);</span><br><span class="line">	try &#123;</span><br><span class="line">		switch (request.type) &#123;</span><br><span class="line">		//create/close session don&apos;t require request record</span><br><span class="line">		case OpCode.createSession:</span><br><span class="line">		case OpCode.closeSession:</span><br><span class="line">			if (!request.isLocalSession()) &#123;</span><br><span class="line">				pRequest2Txn(request.type, zks.getNextZxid(), request,</span><br><span class="line">							 null, true);</span><br><span class="line">			&#125;</span><br><span class="line">			break;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">	// ...</span><br><span class="line">	request.zxid = zks.getZxid();</span><br><span class="line">	nextProcessor.processRequest(request);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其 <code>pRequest2Txn</code> 如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">protected void pRequest2Txn(int type, long zxid, Request request,</span><br><span class="line">                                Record record, boolean deserialize)</span><br><span class="line">        throws KeeperException, IOException, RequestProcessorException</span><br><span class="line">&#123;</span><br><span class="line">	request.setHdr(new TxnHeader(request.sessionId, request.cxid, zxid,</span><br><span class="line">			Time.currentWallTime(), type));</span><br><span class="line"></span><br><span class="line">	switch (type) &#123;</span><br><span class="line">		case OpCode.createSession:</span><br><span class="line">			request.request.rewind();</span><br><span class="line">			int to = request.request.getInt();</span><br><span class="line">			request.setTxn(new CreateSessionTxn(to));</span><br><span class="line">			request.request.rewind();</span><br><span class="line">			if (request.isLocalSession()) &#123;</span><br><span class="line">				zks.sessionTracker.addSession(request.sessionId, to);</span><br><span class="line">			&#125; else &#123;</span><br><span class="line">				zks.sessionTracker.addGlobalSession(request.sessionId, to);</span><br><span class="line">			&#125;</span><br><span class="line">			zks.setOwner(request.sessionId, request.getOwner());</span><br><span class="line">			break;</span><br><span class="line">		// ...</span><br><span class="line">	&#125;</span><br><span class="line">	// ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>创建了一个 创建<code>Session</code> 的请求，然后让 <code>nextProcessor</code> 去处理，而 <code>nextProcessor</code> 指的是 <code>SyncRequestProcessor</code>，其代码主要的逻辑是负责 <code>Request</code> 的序列化，或者做整个的 <code>DataTree</code> 与 <code>Session</code> 的快照。当 <code>SyncRequestProcessor</code> 处理完后，会由 <code>FinalRequestProcessor</code> 接着处理,其处理 <code>Session</code> 的主要的逻辑代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">case OpCode.createSession: &#123;</span><br><span class="line">    zks.serverStats().updateLatency(request.createTime);</span><br><span class="line"></span><br><span class="line">    lastOp = &quot;SESS&quot;;</span><br><span class="line">    cnxn.updateStatsForResponse(request.cxid, request.zxid, lastOp,</span><br><span class="line">            request.createTime, Time.currentElapsedTime());</span><br><span class="line"></span><br><span class="line">    zks.finishSessionInit(request.cnxn, true);</span><br><span class="line">    return;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其 <code>finishSessionInit</code> 方法如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">public void finishSessionInit(ServerCnxn cnxn, boolean valid) &#123;</span><br><span class="line">	// cnxn 的 JMX 注册</span><br><span class="line">	try &#123;</span><br><span class="line">		ConnectResponse rsp = new ConnectResponse(0, valid ? cnxn.getSessionTimeout()</span><br><span class="line">				: 0, valid ? cnxn.getSessionId() : 0, // send 0 if session is no</span><br><span class="line">						// longer valid</span><br><span class="line">						valid ? generatePasswd(cnxn.getSessionId()) : new byte[16]);</span><br><span class="line">		// ... 创建 NIO buf</span><br><span class="line">		cnxn.sendBuffer(bb);</span><br><span class="line">		if (valid) &#123;</span><br><span class="line">			LOG.info(&quot;Established session 0x&quot;</span><br><span class="line">					+ Long.toHexString(cnxn.getSessionId())</span><br><span class="line">					+ &quot; with negotiated timeout &quot; + cnxn.getSessionTimeout()</span><br><span class="line">					+ &quot; for client &quot;</span><br><span class="line">					+ cnxn.getRemoteSocketAddress());</span><br><span class="line">			cnxn.enableRecv();</span><br><span class="line">		&#125;</span><br><span class="line">        // ... else</span><br><span class="line">	&#125; catch (Exception e) &#123;</span><br><span class="line">		LOG.warn(&quot;Exception while establishing session, closing&quot;, e);</span><br><span class="line">		cnxn.close();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码注意一下 <code>generatePasswd</code> 这个方法，这个是重连的关键。至此，服务器完成了对 <code>Session</code> 的创建。再看看，客户端当接受到 <code>ConnectResponse</code> 消息后，是如何处理的，具体逻辑在 <code>ClientCnxnSocketNIO</code> 中的<code>doIO</code> 逻辑中:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">void doIO(List&lt;Packet&gt; pendingQueue, ClientCnxn cnxn)</span><br><span class="line">      throws InterruptedException, IOException &#123;</span><br><span class="line">	SocketChannel sock = (SocketChannel) sockKey.channel();</span><br><span class="line">	if (sock == null) &#123;</span><br><span class="line">		throw new IOException(&quot;Socket is null!&quot;);</span><br><span class="line">	&#125;</span><br><span class="line">	if (sockKey.isReadable()) &#123;</span><br><span class="line">    	// ...</span><br><span class="line">		if (!incomingBuffer.hasRemaining()) &#123;</span><br><span class="line">			incomingBuffer.flip();</span><br><span class="line">			if (incomingBuffer == lenBuffer) &#123;</span><br><span class="line">				recvCount++;</span><br><span class="line">				readLength();</span><br><span class="line">			&#125; else if (!initialized) &#123;</span><br><span class="line">				readConnectResult();</span><br><span class="line">				enableRead();</span><br><span class="line">				// ...</span><br><span class="line">				initialized = true;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	// ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其关键是 <code>readConnectResult</code> 的代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">void readConnectResult() throws IOException &#123;</span><br><span class="line">	ByteBufferInputStream bbis = new ByteBufferInputStream(incomingBuffer);</span><br><span class="line">	BinaryInputArchive bbia = BinaryInputArchive.getArchive(bbis);</span><br><span class="line">	ConnectResponse conRsp = new ConnectResponse();</span><br><span class="line">	conRsp.deserialize(bbia, &quot;connect&quot;);</span><br><span class="line">	boolean isRO = false;</span><br><span class="line">	try &#123;</span><br><span class="line">		isRO = bbia.readBool(&quot;readOnly&quot;);</span><br><span class="line">	&#125; catch (IOException e) &#123;</span><br><span class="line">		LOG.warn(&quot;Connected to an old server; r-o mode will be unavailable&quot;);</span><br><span class="line">	&#125;</span><br><span class="line">	this.sessionId = conRsp.getSessionId();</span><br><span class="line">	sendThread.onConnected(conRsp.getTimeOut(), this.sessionId,</span><br><span class="line">			conRsp.getPasswd(), isRO);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>反序列化连接的请求，并记录 <code>SessionId</code>，并调用 <code>onConnected</code>，其代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">void onConnected(int _negotiatedSessionTimeout, long _sessionId,</span><br><span class="line">		byte[] _sessionPasswd, boolean isRO) throws IOException &#123;</span><br><span class="line">	negotiatedSessionTimeout = _negotiatedSessionTimeout;</span><br><span class="line">	// .. 协商 Session 超时时间</span><br><span class="line">	readTimeout = negotiatedSessionTimeout * 2 / 3;</span><br><span class="line">	connectTimeout = negotiatedSessionTimeout / hostProvider.size();</span><br><span class="line">	hostProvider.onConnected();</span><br><span class="line">	sessionId = _sessionId;</span><br><span class="line">	sessionPasswd = _sessionPasswd;</span><br><span class="line">	state = (isRO) ? States.CONNECTEDREADONLY : States.CONNECTED;</span><br><span class="line">	seenRwServerBefore |= !isRO;</span><br><span class="line">	KeeperState eventState = (isRO) ? KeeperState.ConnectedReadOnly : KeeperState.SyncConnected;</span><br><span class="line">	eventThread.queueEvent(new WatchedEvent(Watcher.Event.EventType.None, eventState, null));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>根据得到的 <code>Session</code> 超时时间，初始化客户端的一些参数，并发起一个 <code>Watcher.Event.EventType.None</code> 的事件通知，表明连接成功。至此连接建立完成。同时在服务器创建了 <code>Session</code>。</p>
+<h3 id="2-_Session_的关闭">2. Session 的关闭</h3><p>在 <code>zookeeper</code> 的 <code>close</code> 方法如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public void close() throws IOException &#123;</span><br><span class="line">    try &#123;</span><br><span class="line">        RequestHeader h = new RequestHeader();</span><br><span class="line">        h.setType(ZooDefs.OpCode.closeSession);</span><br><span class="line">        submitRequest(h, null, null, null);</span><br><span class="line">    &#125; catch (InterruptedException e) &#123;</span><br><span class="line">        // ignore, close the send/event threads</span><br><span class="line">    &#125; finally &#123;</span><br><span class="line">        disconnect();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>发起了一个关闭的请求，我们在 <code>PrepRequestProcessor</code> 的 <code>pRequest2Txn</code> 方法中能看到相应的处理操作:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">case OpCode.closeSession:</span><br><span class="line">    Set&lt;String&gt; es = zks.getZKDatabase().getEphemerals(request.sessionId);</span><br><span class="line">    synchronized (zks.outstandingChanges) &#123;</span><br><span class="line">        for (ChangeRecord c : zks.outstandingChanges) &#123;</span><br><span class="line">            if (c.stat == null) &#123;</span><br><span class="line">                // Doing a delete</span><br><span class="line">                es.remove(c.path);</span><br><span class="line">            &#125; else if (c.stat.getEphemeralOwner() == request.sessionId) &#123;</span><br><span class="line">                es.add(c.path);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        for (String path2Delete : es) &#123;</span><br><span class="line">            addChangeRecord(new ChangeRecord(request.getHdr().getZxid(), path2Delete, null, 0, null));</span><br><span class="line">        &#125;</span><br><span class="line">        zks.sessionTracker.setSessionClosing(request.sessionId);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    LOG.info(&quot;Processed session termination for sessionid: 0x&quot;</span><br><span class="line">            + Long.toHexString(request.sessionId));</span><br><span class="line">    break;</span><br></pre></td></tr></table></figure>
+<p>会将相应的 <code>Session</code> 的 <code>isClosing</code> 属性设置为 <code>true</code>。接下来将由 <code>SessionExpire</code> 去处理，我们只需要去看 <code>ZookeeperServer</code> 中的处理即可:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public void expire(Session session) &#123;</span><br><span class="line">    long sessionId = session.getSessionId();</span><br><span class="line">    LOG.info(&quot;Expiring session 0x&quot; + Long.toHexString(sessionId)</span><br><span class="line">            + &quot;, timeout of &quot; + session.getTimeout() + &quot;ms exceeded&quot;);</span><br><span class="line">    close(sessionId);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其 <code>close</code> 函数如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">private void close(long sessionId) &#123;</span><br><span class="line">    Request si = new Request(null, sessionId, 0, OpCode.closeSession, null, null);</span><br><span class="line">    setLocalSessionFlag(si);</span><br><span class="line">    submitRequest(si);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后又会重新走一次上面的流程，但是不一样的在 <code>SyncRequestProcessor</code> 的 <code>queuedRequests</code> 将又会多一条的数据，因为 <code>SyncRequestProcessor</code> 其本身也是 <code>Thread</code> ，在其 <code>run</code> 有如下的代码:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Request si = null;</span><br><span class="line">if (toFlush.isEmpty()) &#123;</span><br><span class="line">    si = queuedRequests.take();</span><br><span class="line">&#125; else &#123;</span><br><span class="line">    si = queuedRequests.poll();</span><br><span class="line">    if (si == null) &#123;</span><br><span class="line">        flush(toFlush);</span><br><span class="line">        continue;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>会调用其 <code>fluash</code> 方法，其代码中有如下的代码段:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Request i = toFlush.remove();</span><br><span class="line">if (nextProcessor != null) &#123;</span><br><span class="line">    nextProcessor.processRequest(i);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>将会调用 <code>FinalRequestProcessor</code> 的 <code>processRequest</code> 方法，最终会调用到 <code>ZookeeperServer</code> 中的 <code>processTxn</code> 函数，其关键代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sessionTracker.removeSession(sessionId);</span><br></pre></td></tr></table></figure>
+<p>会调用 <code>SessionTrackerImpl</code> 中的 <code>removeSession</code>，代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">synchronized public void removeSession(long sessionId) &#123;</span><br><span class="line">    SessionImpl s = sessionsById.remove(sessionId);</span><br><span class="line">    sessionsWithTimeout.remove(sessionId);</span><br><span class="line">    if (s != null) &#123;</span><br><span class="line">        sessionExpiryQueue.remove(s);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从内存中移除对应的 <code>Session</code> ，并调用 <code>ExpiryQueue</code> 中的 <code>remove</code> 方法，代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public Long remove(E elem) &#123;</span><br><span class="line">    Long expiryTime = elemMap.remove(elem);</span><br><span class="line">    if (expiryTime != null) &#123;</span><br><span class="line">        Set&lt;E&gt; set = expiryMap.get(expiryTime);</span><br><span class="line">        if (set != null) &#123;</span><br><span class="line">            set.remove(elem);</span><br><span class="line">            // We don&apos;t need to worry about removing empty sets,</span><br><span class="line">            // they&apos;ll eventually be removed when they expire.</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return expiryTime;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    </div>
+    <footer>
+        
+	
+	<div class="categories">
+	<a href="/categories/Zookeeper/">Zookeeper</a>
+	</div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Source-codes-analysis/">Source codes analysis</a>, <a href="/tags/Zookeeper/">Zookeeper</a>
+  </div>
+
+        <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+ <nav id="pagination" >
+    
+    <a href="/J2ee/J2ee/Java应用高并发优化漫谈/" class="alignleft prev" title="Java应用高并发优化漫谈">Java应用高并发优化漫谈</a>
+    
+    
+    <a href="/Zookeeper/Zookeeper/Zookeeper/" class="alignright next" title="Zookeeper">Zookeeper</a>
+    
+    <div class="clearfix"></div>
+</nav>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="widget author-meta">
+    <div class="author-avatar">
+        <img src="/images/author.jpg">
+    </div>
+    <div class="author-name">coolwcan</div>
+    <div class="author-work">Java Developer</div>
+    <div class="author-location">
+        <i class="icon-location"></i>
+        <span>四川成都</span>
+    </div>
+    <div class="social-font">
+        
+        <a href="https://github.com/coolwcan" target="_blank" title="github"></a>
+        
+        
+        <a href="mailto:coolwcan@163.com" target="_blank" class="icon-email" title="email"></a>
+        
+    </div>
+</div>
+
+
+  <div class="widget search" style="margin-bottom: 30px">
+    <input id="local-search-input" class="search" type="search" placeholder="搜索">
+    <div id="local-search-result" style="display: none;" class="entry"></div>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    
+        <li><a href="/categories/Algorithm/">Algorithm</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/C-C/">C/C++</a><small>21</small></li>
+    
+  
+    
+        <li><a href="/categories/Coding/">Coding</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Computer/">Computer</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Database/">Database</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/DevOps/">DevOps</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Distributed/">Distributed</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Erlang/">Erlang</a><small>7</small></li>
+    
+  
+    
+        <li><a href="/categories/J2ee/">J2ee</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Java/">Java</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Life/">Life</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Network/">Network</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/Security/">Security</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/Shiro/">Shiro</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Tools/">Tools</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Web/">Web</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Zookeeper/">Zookeeper</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/配置中心/">配置中心</a><small>1</small></li>
+    
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/ACK/" style="font-size: 10px;">ACK</a> <a href="/tags/Archlinux/" style="font-size: 10px;">Archlinux</a> <a href="/tags/Arrays/" style="font-size: 10px;">Arrays</a> <a href="/tags/Base64/" style="font-size: 10px;">Base64</a> <a href="/tags/C-C/" style="font-size: 20px;">C/C++</a> <a href="/tags/CRC/" style="font-size: 10px;">CRC</a> <a href="/tags/Cache/" style="font-size: 10px;">Cache</a> <a href="/tags/Centos/" style="font-size: 10px;">Centos</a> <a href="/tags/Chrome/" style="font-size: 10px;">Chrome</a> <a href="/tags/Class/" style="font-size: 10px;">Class</a> <a href="/tags/Coding/" style="font-size: 10px;">Coding</a> <a href="/tags/Collection/" style="font-size: 11.43px;">Collection</a> <a href="/tags/Compile/" style="font-size: 10px;">Compile</a> <a href="/tags/Compiler/" style="font-size: 10px;">Compiler</a> <a href="/tags/Computer/" style="font-size: 11.43px;">Computer</a> <a href="/tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="/tags/DDos/" style="font-size: 10px;">DDos</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Database/" style="font-size: 10px;">Database</a> <a href="/tags/Deployment/" style="font-size: 10px;">Deployment</a> <a href="/tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="/tags/Distributed/" style="font-size: 10px;">Distributed</a> <a href="/tags/Efficiency/" style="font-size: 10px;">Efficiency</a> <a href="/tags/Erlang/" style="font-size: 15.71px;">Erlang</a> <a href="/tags/GC/" style="font-size: 10px;">GC</a> <a href="/tags/Generic/" style="font-size: 10px;">Generic</a> <a href="/tags/Git/" style="font-size: 10px;">Git</a> <a href="/tags/Intellij-Idea/" style="font-size: 10px;">Intellij Idea</a> <a href="/tags/J2ee/" style="font-size: 17.14px;">J2ee</a> <a href="/tags/JVM/" style="font-size: 10px;">JVM</a> <a href="/tags/Java/" style="font-size: 17.14px;">Java</a> <a href="/tags/JavaBean/" style="font-size: 10px;">JavaBean</a> <a href="/tags/Life/" style="font-size: 10px;">Life</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Memorty/" style="font-size: 10px;">Memorty</a> <a href="/tags/Memory/" style="font-size: 15.71px;">Memory</a> <a href="/tags/MySQL/" style="font-size: 10px;">MySQL</a> <a href="/tags/NAT/" style="font-size: 10px;">NAT</a> <a href="/tags/Network/" style="font-size: 14.29px;">Network</a> <a href="/tags/Object-oriented/" style="font-size: 10px;">Object-oriented</a> <a href="/tags/Optimize/" style="font-size: 11.43px;">Optimize</a> <a href="/tags/REST/" style="font-size: 10px;">REST</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/Release/" style="font-size: 10px;">Release</a> <a href="/tags/SEQ/" style="font-size: 10px;">SEQ</a> <a href="/tags/SPI/" style="font-size: 10px;">SPI</a> <a href="/tags/SSL-TLS/" style="font-size: 11.43px;">SSL/TLS</a> <a href="/tags/SSO/" style="font-size: 10px;">SSO</a> <a href="/tags/Security/" style="font-size: 12.86px;">Security</a> <a href="/tags/Session/" style="font-size: 11.43px;">Session</a> <a href="/tags/Shell/" style="font-size: 10px;">Shell</a> <a href="/tags/Shiro/" style="font-size: 15.71px;">Shiro</a> <a href="/tags/Sort/" style="font-size: 10px;">Sort</a> <a href="/tags/Source-codes-analysis/" style="font-size: 17.14px;">Source codes analysis</a> <a href="/tags/Spring-MVC/" style="font-size: 11.43px;">Spring MVC</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/Test/" style="font-size: 10px;">Test</a> <a href="/tags/Tomcat/" style="font-size: 10px;">Tomcat</a> <a href="/tags/Tools/" style="font-size: 18.57px;">Tools</a> <a href="/tags/Ubuntu/" style="font-size: 10px;">Ubuntu</a> <a href="/tags/Vim/" style="font-size: 10px;">Vim</a> <a href="/tags/Xss/" style="font-size: 10px;">Xss</a> <a href="/tags/Zookeeper/" style="font-size: 12.86px;">Zookeeper</a> <a href="/tags/ets/" style="font-size: 10px;">ets</a> <a href="/tags/热更新/" style="font-size: 10px;">热更新</a> <a href="/tags/高并发/" style="font-size: 10px;">高并发</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.bootcss.com/mathjax/2.7.4/latest.js">
+</script>
+</body>
+</html>

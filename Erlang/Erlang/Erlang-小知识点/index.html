@@ -1,0 +1,454 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Erlang-小知识点 | coolwcan</title>
+  <meta name="author" content="coolwcan">
+  
+  <meta name="description" content="1. Erlang的一些常量值
+每一个Erlang节点的ETS表的数量是有限制的,默认是 1400 个表
+Erlang原子的个数为 1048576，超过这个数量，VM则直接关闭
+让Erlang节点在不同主机间互通需要打开TCP和UDP的 4369 端口, empd, (Erlang Port Map">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Erlang-小知识点"/>
+  <meta property="og:site_name" content="coolwcan"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="//images/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="coolwcan" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//libs.baidu.com/jquery/1.8.0/jquery.min.js"></script>
+  <script>
+	$(function() {
+		$(".search").keydown(function(e){
+			if (e.keyCode==13) {
+                // var path = "/search.xml";
+                // searchFunc(path, 'local-search-input', 'local-search-result');
+			}
+		});
+	})
+
+    'use strict';
+	var search_id = 'local-search-input'
+    var content_id = 'local-search-result'
+    $.ajax({
+        url: '/search.xml',
+        dataType: "xml",
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                $resultContent.style.display = 'none'
+                var str='<ul class=\"entry search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length <= 0) {
+                    return;
+                }
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title !== '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            if( index_title < 0){
+                                isMatch = false;
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        str += "<li><a href='"+ data_url +"' class='search-result-title' target='_blank'>"+ "> " + data_title +"</a>";
+                    }
+                })
+                $resultContent.innerHTML = str;
+                if (str && str.length > 0) {
+                    $resultContent.style.display = 'block'
+                }
+            })
+        }
+    })
+
+
+  </script>
+</head>
+
+
+<body>
+  <header><div>
+    <nav class="animated">
+        <ul>
+            
+            <li><a href="/">Home</a></li>
+            
+            <li><a href="/about">About</a></li>
+            
+            <li><a href="/atom.xml">RSS</a></li>
+        </ul>
+    </nav>
+</div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header class="article-info clearfix">
+	<h1 itemprop="name">
+		Erlang-小知识点
+	</h1>
+</header>
+    <div class="entry">
+        <h3 id="1-_Erlang的一些常量值">1. Erlang的一些常量值</h3><ol>
+<li>每一个Erlang节点的ETS表的数量是有限制的,默认是 <code>1400</code> 个表</li>
+<li>Erlang原子的个数为 <code>1048576</code>，超过这个数量，VM则直接关闭</li>
+<li>让Erlang节点在不同主机间互通需要打开TCP和UDP的 <code>4369</code> 端口, <code>empd, (Erlang Port Mapper Daemon)</code>会使用这个端口</li>
+<li>Erlang的最小堆的大小是 <code>233 words</code></li>
+<li>一个新开的进程，如果没有使用SMP和HiPE，则使用 <code>309 words</code>个内存</li>
+<li>如果二进制数据64 bytes会在进程内存储,如果超过 <code>64 bytes</code>二进制数据是在进程以外的独立的堆分配</li>
+<li>默认的 <code>inline_size</code> 是 <code>24</code></li>
+</ol>
+<h3 id="2-_make_ref，创建一个唯一的标识符">2. <code>make_ref</code>，创建一个唯一的标识符</h3><p>通过将代码转换成 <code>opcode</code> ，会发现执行了 <code>recv_set</code> 和 <code>recv_mark</code> 的操作</p>
+<ul>
+<li><code>recv_set</code><br> 会在当前检查当前进程上下文中是否包含这个信息.如果找到这个信息,就会把消息队列中指向下一条要读消息的指针移动到之前记录的位置</li>
+<li><code>recv_mark</code><br> 在进程上下文保存了队尾指针</li>
+</ul>
+<h3 id="3-_Inline编译">3. Inline编译</h3><ol>
+<li><p>设置inline: </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1. -compile(&#123;inline [Fun/Arity]&#125;).</span><br><span class="line">2. -compile(&#123;inline_size, Size&#125;).</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>inline_size，是指对一个函数进行计算，得出的权重，如果小于这个值就会才inline</p>
+</li>
+<li>默认的inline_size是 <strong>24</strong>，但是一般 <strong>30</strong> 可以达到最大的优化</li>
+</ol>
+<h3 id="4-_iolist">4. iolist</h3><ol>
+<li>组成<ol>
+<li>binary</li>
+<li>[]</li>
+<li>列表, 每个元素是int(0-255)或者binary或者iolist：<br> 1、其中binary是指 bitsize % 8 == 0 .<br> 2、int 是0-255</li>
+</ol>
+</li>
+<li>iolist数据可以直接发向 port(socket也是一种特殊的port)，没有必要转换成binary</li>
+</ol>
+<h3 id="4-_SMP">4. SMP</h3><p>Symmetrical Multi Processor，多核调用，没有开启SMP时，Erlang VM只有一个 <code>Scheduler</code> 运行于主线程中，<code>Scheduler</code> 不断地从运行队列中取出需要处理的Erlang进程和IO-job，因为只存在一个 <code>Scheduler</code>所以并没有对数据加锁。当开启SMP后，Erlang VM中将会有1-1024个 <code>Scheduler</code>, 每一个 <code>Scheduler</code> 都是一个独立的操作系统进程，会存在对数据加锁的过程，但是能充分利用系统资源。</p>
+<h3 id="5-_日期处理">5. 日期处理</h3><p>日期处理类是, <code>calendar</code>, 其格式是: <code>datetime = { {Year, Month, Day}, {Hour, Minute, Second} }</code>，以下是对日期的一些常用操作</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">1. 获取时间：</span><br><span class="line">	1. 本地时间：calendar:local_time().</span><br><span class="line">	2. 世界时间：calendar:universal_time().</span><br><span class="line">2. 判断是否是润年：</span><br><span class="line">   calendar:is_leap_year</span><br><span class="line">3. 判断日期是否合法，是能判断年，月，日:</span><br><span class="line">	calendar:valid_date ， 如: calendar:valid_date(&#123;2014, 12, 9&#125;).</span><br><span class="line">4. 计算某一天，是一周的第几天：</span><br><span class="line">	calendar:day_of_the_week(2014, 12, 10).</span><br><span class="line">5. 计算某一年的某一个月有多少天:</span><br><span class="line">	calendar:last_day_of_the_month(2014, 12).</span><br><span class="line">6. 将时间转换成秒:</span><br><span class="line">	calendar:time_to_seconds(&#123;1,20,0&#125;).</span><br><span class="line">7. 将本地时间转换成世界时间(秒):</span><br><span class="line">	calendar:datetime_to_gregorian_seconds</span><br><span class="line">8. 将世界时间(秒)转换成本地时间:</span><br><span class="line">	calendar:gregorian_seconds_to_datetime</span><br><span class="line">9. 将本地时间转换成UTC标准时间:</span><br><span class="line">	erlang:localtime_to_universaltime，如： erlang:localtime_to_universaltime(&#123; &#123;1996,11,6&#125;,&#123;14,45,17&#125; &#125;).</span><br><span class="line">10. 将UTC标准时间转换成本地时间:</span><br><span class="line">	erlang:universaltime_to_localtime，如：erlang:universaltime_to_localtime(&#123; &#123;1996,11,6&#125;,&#123;14,18,43&#125; &#125;).</span><br></pre></td></tr></table></figure>
+<h3 id="6-_二进制">6. 二进制</h3><p><code>binary</code> 和 <code>bitstring</code> 内部实现机制相同，仅仅是单位不一样而已</p>
+<center><img src="/pics/Erlang-binary.jpg" alt=""></center>
+
+<ul>
+<li><code>refc binaries</code><ul>
+<li><code>ProcBin</code><br> 存放在进程堆中，包含了一个二进制数据的元数据信息，二进制数据的位置和引用计数</li>
+<li><code>binary object</code><br>进程堆以外的二进制对象，可以被任意数量的进程和任意数量的 <code>ProcBin</code> 引用，该对象包含了引用计数器，一旦计器归零就会被 GC</li>
+</ul>
+</li>
+<li><code>heap binaries</code><br> 都是小块二进制数据，最大为 <code>64</code> 字节，直接存放在进程堆，垃圾回收和发送消息都是通过拷贝实现，不需要 GC 做特殊处理</li>
+<li><code>sub binaries</code><br> 由 <code>split_binary</code> 产生，是另外一个进制数据的部分应用，仅仅是指向某一段数据，由于并没有拷贝所有binary的模式匹配成本很低</li>
+<li><code>match contexts</code><br> 类似于 <code>sub binary</code>，但是针对二进制匹配做了优化，例如它包含一个直接指向二进制数据的指针，从二进制匹配出来字段值之后移动指针位置即可.</li>
+</ul>
+<h3 id="7-_proc_lib">7. proc_lib</h3><center><img src="/pics/Erlang-proc_lib.jpg" alt=""></center>
+
+<ul>
+<li><code>proc_lib:spawn</code> 与 <code>erlang:spawn</code> 的区别：<ol>
+<li><code>proc_lib:spawn</code><ol>
+<li>proc_lib创建的进程，在其进程的元数据的dictionary会增加一些数据</li>
+<li>proc_lib创建的进程，在出错后，如果启动了sasl，则会收到一份crash report</li>
+<li>proc_lib创建的进程，认为shutdown或者{shutdown, Term}是正常退出的</li>
+<li>使用proc_lib创建的进程退出的原因不是normal也不是shutdown的时候,就会创建一个进程崩溃报告</li>
+</ol>
+</li>
+<li><code>erlang:spawn</code><ol>
+<li>erlang:spawn创建的进程，认为normal是才是正常退出的</li>
+</ol>
+</li>
+</ol>
+</li>
+<li><p><code>proc_lib:start</code><br> 创建一个进程，并等待，直到由子进程通过调用 <code>proc_lib:init_ack</code> 来向父进程发送到已经完成初始化的消息为止(与gen_server的start_link与init关系是一样的)</p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">acceptor_init(Parent, Port, Module) -&gt;</span><br><span class="line">   State = #state&#123; </span><br><span class="line">     parent = Parent,</span><br><span class="line">     port = Port,</span><br><span class="line">     module = Module</span><br><span class="line">    &#125;,</span><br><span class="line">   error_logger:info_msg(&quot;Listening on port ~p~n&quot;, [Port]),</span><br><span class="line">   case (catch do_init(State)) of</span><br><span class="line">       &#123;ok, ListenSocket&#125; -&gt;</span><br><span class="line">           proc_lib:init_ack(State#state.parent, &#123;ok, self()&#125;),</span><br><span class="line">           acceptor_loop(State#state&#123;listener = ListenSocket&#125;);</span><br><span class="line">       Error -&gt;</span><br><span class="line">           proc_lib:init_ack(Parent, Error),</span><br><span class="line">           error</span><br><span class="line">   end.</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="8-_Group_Leader">8. Group Leader</h3><ul>
+<li>Erlang的所有进程都属于一个组，而每一个组都会有一个 <code>group leader</code></li>
+<li><code>init</code>进程，即 <code>&lt;0,0,0&gt;</code> 是最初的进程组的group leader</li>
+<li><code>user</code>，是标准IO，也是Erlang Shell的group leader</li>
+<li><p>相关操作:</p>
+<ul>
+<li><p>获取一个进程的group leader的值: </p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1. erlang:process_info(Pid).</span><br><span class="line">2. erlang:group_leader/0</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>设置一个进程的group leader<br><code>erlang:group_leader/2</code></p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="9-_io:foramt">9. io:foramt</h3><p><code>io:foramt</code> 格式化时，会将消息按指定的格式发给 <code>group_leader</code> ，然后 <code>group_leader</code> 负责io请求和显示，控制字符格式:   </p>
+<p><code>~F.P.PadModC</code>  </p>
+<p>具体含义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">F  : 表示输出的宽度</span><br><span class="line">P  : 表示输出的精度</span><br><span class="line">Pad: 表示填充字符</span><br><span class="line">Mod: 控制字符；</span><br><span class="line">	1. t， 输出unicode字符</span><br><span class="line">    2. l,  停止</span><br><span class="line">    3. p/P,检测可打印字符</span><br><span class="line">C  ：表示输出什么类型的值</span><br><span class="line">    1. ~,用于转义</span><br><span class="line">    2. c，字符</span><br><span class="line">    3. f，浮点数</span><br><span class="line">    4. e，科学计数法</span><br><span class="line">    5. g，浮点(小于10000.00,大于等于0.1)或者科学计数</span><br><span class="line">    6. s，字符串</span><br><span class="line">    7. w，Erlang Term</span><br><span class="line">    8. p，美化版的w</span><br><span class="line">    9. W，类似于w，但是可以在输入后面加一个限制来表示一行可以打印的大小</span><br><span class="line">    10. P,类似于p，但是可以在输入后面加一个限制来表示一行可以打印的大小</span><br><span class="line">    11. B,输出某种进制下的Number值</span><br><span class="line">    12. X,类似于B,但是可以在输出后，加上一个前缀</span><br><span class="line">    13. #，类似于B，会自动加上该Number的进制</span><br><span class="line">    14. b，类似于B，但是会打印出小写字母</span><br><span class="line">    15. x，类似于X，但是会打印出小写字母</span><br><span class="line">    16. +，类似于#，但是会打印出小写字母</span><br><span class="line">    17. n，换行</span><br><span class="line">    18. i，忽略接下来的输入项</span><br></pre></td></tr></table></figure>
+<p>更详细的内容，请看官网： <a href="http://erlang.org/doc/apps/stdlib/io_protocol.html" target="_blank" rel="noopener">http://erlang.org/doc/apps/stdlib/io_protocol.html</a></p>
+<h3 id="10-_定时器">10. 定时器</h3><ol>
+<li>定时器有三种实现方式<ol>
+<li><code>timer:send_after</code></li>
+<li><code>erlang:start_timer / erlang:send_after</code></li>
+<li><code>receive ... after</code></li>
+</ol>
+</li>
+<li>三者区别:<ol>
+<li><code>receive ... after</code>:<br> after原语的本质就是一个定时器，因为加上了定时器，所以这个性能比不加after的性能要低</li>
+<li>timer模块由一个进程来管理timer的，所以频繁的创建和关闭timer会使该进程过载，会出现问题</li>
+<li>eralng定时器，是一种更高效的实现timer，整个定时器由 <code>bump_timer</code> 来驱动。<code>bump_timer</code> 是在 <code>schedule</code> 的时候不定期调用的。总之使用timer的时候要小心，因为 <code>timer</code> 是在 <code>scheduler</code> 的线程里面调用的，不能做非常耗时的操作，  否则会阻塞调度器</li>
+</ol>
+</li>
+<li>erlang的send_after与start_timer的区别:<ol>
+<li>它们的区别在于timer超时后发送的消息<ol>
+<li><code>send_after</code> 发送的是Msg</li>
+<li><code>start_timer</code> 发送的是 <code>{timeout, TimerRef, Msg}</code></li>
+</ol>
+</li>
+<li>为何有这种区别，start_timer是后来加上的函数，是为了避免在timer超时后，能够正确地关闭timer：参考 <code>eralng:cancel_timer</code><ol>
+<li>假如在超时前关闭timer，send_after与start_timer是一样的</li>
+<li>假如在超时后关闭timer，因为send_after仅仅发送的是消息，根本不能得到TimerRef，就不能正常关闭</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<h3 id="11-_list/ets/gb_tree的选择">11. list/ets/gb_tree的选择</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">元素个数 0~100个，    选list</span><br><span class="line">元素个数 100~10000个，选ets</span><br><span class="line">元素个数 10000个以上，选gb_tree</span><br></pre></td></tr></table></figure>
+<h3 id="12-_为什么更愿意使用List">12. 为什么更愿意使用List</h3><ol>
+<li>Erlang的单一赋值的，使其不可能更改外部的数据，而List却能动态增加数据</li>
+<li>Erlang的List的数据添加操作是将数据添加在头部，能够保持原有list不被破坏：<br> 如： [1,2,3,4,5,6,7]    <ol>
+<li>比如现在你执行这个列表的遍历到元素5,这时候如果我在头部添加一个元素，变成[0,1,2,3,4,5,6,7],你继续遍历后面的元素依然是6,7,这个行为的结果是可以预测的</li>
+<li>如果我是在尾部添加0，则变成 [1,2,3,4,5,6,7,0]，你继续遍历最后的结果会多出一个0</li>
+</ol>
+</li>
+</ol>
+<h3 id="13-_堆控制">13. 堆控制</h3><ol>
+<li><code>erl +h</code> 选项可以调整全局的 <code>min_heap_size</code></li>
+<li>针对某个进程可以在创建的时候使用 <code>spawn_opt/4</code> 来指定 <code>min_heap_size</code> 注意:该参数使用的单位是字 <code>word</code></li>
+</ol>
+<h3 id="14-_公平调度">14. 公平调度</h3><ol>
+<li>erlang函数调用,由于 <code>erlang</code> 的代码翻译成 <code>opcode</code>,由虚拟机执行，所以一次完整的函数调用为一个 <code>reduction</code> </li>
+<li><code>bif</code> 的 <code>trap</code> 机制。简单的说就是 <code>bif</code> 会执行到大概几个 <code>reduction</code> 这样的时间片后放弃执行，把当前的执行情况记录下来，然后退出。等下次调度再执行的时候，会继续之前的位置往下。</li>
+<li>IO的调度。 IO也是公平调度的，把IO的处理量换算成 <code>reduction</code> ，算在宿主进程的时间片里面。</li>
+</ol>
+<h3 id="15-_Erlang的Trap机制">15. Erlang的Trap机制</h3><ol>
+<li>Trap机制，即将费时的操作分割来完成，为了达到公平调度的目的</li>
+<li>作用：<ol>
+<li>把费时操作分阶段做</li>
+<li>延迟执行，比如send操作</li>
+<li>主动放弃CPU yield</li>
+</ol>
+</li>
+</ol>
+<h3 id="16-_gen_tcp中的close，shutdown，exit_on_close的区别">16. gen_tcp中的close，shutdown，exit_on_close的区别</h3><ol>
+<li>close<br>close的操作源于文件，因为在Linux中，Socket也是文件，所以close的操作，就是将这个Socket的文件描述符的引用减1，如果这个Socket被复制(dup)，那么close的操作，是不会释放socket资源的，只有当描述符的引用变为0时，才能释放资源</li>
+<li>shutdown  <ol>
+<li>关闭读<br>将自己Socket的读标志为关闭状态，如果对方写数据时，就会触发，去寻找这个标志，当发现是关闭时，则会关闭他们之间的连接</li>
+<li>关闭写<br>如果关闭自己的写，从别一个方面来说，即对方再也不能接受数据了，所以会分别关闭他们的Socket</li>
+</ol>
+</li>
+<li>exit_on_close<ol>
+<li>exit_on_close对gen_tcp:shutdown(S, read)没有影响</li>
+<li>exit_on_close仅仅影响gen_tcp:shutdown(S, write),<ol>
+<li>true<br>如果A执行gen_tcp:shutdown(S, write)，则表明A不会发数据了，那么A与B之间的连接就会关闭，双方都会收到 <code>{tcp_closed, Socket}</code> 消息</li>
+<li>false<br>这仅仅用于当对方的Socket的写关闭时，仍然向对方发送数据的场景，如果B的Socket设置为 <code>{exit_on_close, false}</code>, A执行 <code>gen_tcp:shutdown(S, write)</code>，则A不会收到任何消息，而B会收到 `{tcp_closed, Socket}消息，但是不会关闭Socket，B可以正常给A发消息，A也能正常接受</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+
+    </div>
+    <footer>
+        
+	
+	<div class="categories">
+	<a href="/categories/Erlang/">Erlang</a>
+	</div>
+
+        
+        <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+ <nav id="pagination" >
+    
+    <a href="/Erlang/Erlang/Erlang优化/" class="alignleft prev" title="Erlang优化">Erlang优化</a>
+    
+    
+    <a href="/Distributed/Distributed/Dog Pile Effect/" class="alignright next" title="Dog-Pile Effect">Dog-Pile Effect</a>
+    
+    <div class="clearfix"></div>
+</nav>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="widget author-meta">
+    <div class="author-avatar">
+        <img src="/images/author.jpg">
+    </div>
+    <div class="author-name">coolwcan</div>
+    <div class="author-work">Java Developer</div>
+    <div class="author-location">
+        <i class="icon-location"></i>
+        <span>四川成都</span>
+    </div>
+    <div class="social-font">
+        
+        <a href="https://github.com/coolwcan" target="_blank" title="github"></a>
+        
+        
+        <a href="mailto:coolwcan@163.com" target="_blank" class="icon-email" title="email"></a>
+        
+    </div>
+</div>
+
+
+  <div class="widget search" style="margin-bottom: 30px">
+    <input id="local-search-input" class="search" type="search" placeholder="搜索">
+    <div id="local-search-result" style="display: none;" class="entry"></div>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    
+        <li><a href="/categories/Algorithm/">Algorithm</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/C-C/">C/C++</a><small>21</small></li>
+    
+  
+    
+        <li><a href="/categories/Coding/">Coding</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Computer/">Computer</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Database/">Database</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/DevOps/">DevOps</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Distributed/">Distributed</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Erlang/">Erlang</a><small>7</small></li>
+    
+  
+    
+        <li><a href="/categories/J2ee/">J2ee</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Java/">Java</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Life/">Life</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Network/">Network</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/Security/">Security</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/Shiro/">Shiro</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Tools/">Tools</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Web/">Web</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Zookeeper/">Zookeeper</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/配置中心/">配置中心</a><small>1</small></li>
+    
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/ACK/" style="font-size: 10px;">ACK</a> <a href="/tags/Archlinux/" style="font-size: 10px;">Archlinux</a> <a href="/tags/Arrays/" style="font-size: 10px;">Arrays</a> <a href="/tags/Base64/" style="font-size: 10px;">Base64</a> <a href="/tags/C-C/" style="font-size: 20px;">C/C++</a> <a href="/tags/CRC/" style="font-size: 10px;">CRC</a> <a href="/tags/Cache/" style="font-size: 10px;">Cache</a> <a href="/tags/Centos/" style="font-size: 10px;">Centos</a> <a href="/tags/Chrome/" style="font-size: 10px;">Chrome</a> <a href="/tags/Class/" style="font-size: 10px;">Class</a> <a href="/tags/Coding/" style="font-size: 10px;">Coding</a> <a href="/tags/Collection/" style="font-size: 11.43px;">Collection</a> <a href="/tags/Compile/" style="font-size: 10px;">Compile</a> <a href="/tags/Compiler/" style="font-size: 10px;">Compiler</a> <a href="/tags/Computer/" style="font-size: 11.43px;">Computer</a> <a href="/tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="/tags/DDos/" style="font-size: 10px;">DDos</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Database/" style="font-size: 10px;">Database</a> <a href="/tags/Deployment/" style="font-size: 10px;">Deployment</a> <a href="/tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="/tags/Distributed/" style="font-size: 10px;">Distributed</a> <a href="/tags/Efficiency/" style="font-size: 10px;">Efficiency</a> <a href="/tags/Erlang/" style="font-size: 15.71px;">Erlang</a> <a href="/tags/GC/" style="font-size: 10px;">GC</a> <a href="/tags/Generic/" style="font-size: 10px;">Generic</a> <a href="/tags/Git/" style="font-size: 10px;">Git</a> <a href="/tags/Intellij-Idea/" style="font-size: 10px;">Intellij Idea</a> <a href="/tags/J2ee/" style="font-size: 17.14px;">J2ee</a> <a href="/tags/JVM/" style="font-size: 10px;">JVM</a> <a href="/tags/Java/" style="font-size: 17.14px;">Java</a> <a href="/tags/JavaBean/" style="font-size: 10px;">JavaBean</a> <a href="/tags/Life/" style="font-size: 10px;">Life</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Memorty/" style="font-size: 10px;">Memorty</a> <a href="/tags/Memory/" style="font-size: 15.71px;">Memory</a> <a href="/tags/MySQL/" style="font-size: 10px;">MySQL</a> <a href="/tags/NAT/" style="font-size: 10px;">NAT</a> <a href="/tags/Network/" style="font-size: 14.29px;">Network</a> <a href="/tags/Object-oriented/" style="font-size: 10px;">Object-oriented</a> <a href="/tags/Optimize/" style="font-size: 11.43px;">Optimize</a> <a href="/tags/REST/" style="font-size: 10px;">REST</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/Release/" style="font-size: 10px;">Release</a> <a href="/tags/SEQ/" style="font-size: 10px;">SEQ</a> <a href="/tags/SPI/" style="font-size: 10px;">SPI</a> <a href="/tags/SSL-TLS/" style="font-size: 11.43px;">SSL/TLS</a> <a href="/tags/SSO/" style="font-size: 10px;">SSO</a> <a href="/tags/Security/" style="font-size: 12.86px;">Security</a> <a href="/tags/Session/" style="font-size: 11.43px;">Session</a> <a href="/tags/Shell/" style="font-size: 10px;">Shell</a> <a href="/tags/Shiro/" style="font-size: 15.71px;">Shiro</a> <a href="/tags/Sort/" style="font-size: 10px;">Sort</a> <a href="/tags/Source-codes-analysis/" style="font-size: 17.14px;">Source codes analysis</a> <a href="/tags/Spring-MVC/" style="font-size: 11.43px;">Spring MVC</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/Test/" style="font-size: 10px;">Test</a> <a href="/tags/Tomcat/" style="font-size: 10px;">Tomcat</a> <a href="/tags/Tools/" style="font-size: 18.57px;">Tools</a> <a href="/tags/Ubuntu/" style="font-size: 10px;">Ubuntu</a> <a href="/tags/Vim/" style="font-size: 10px;">Vim</a> <a href="/tags/Xss/" style="font-size: 10px;">Xss</a> <a href="/tags/Zookeeper/" style="font-size: 12.86px;">Zookeeper</a> <a href="/tags/ets/" style="font-size: 10px;">ets</a> <a href="/tags/热更新/" style="font-size: 10px;">热更新</a> <a href="/tags/高并发/" style="font-size: 10px;">高并发</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.bootcss.com/mathjax/2.7.4/latest.js">
+</script>
+</body>
+</html>

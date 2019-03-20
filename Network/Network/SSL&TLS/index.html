@@ -1,0 +1,352 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>网络-SSL/TLS | coolwcan</title>
+  <meta name="author" content="coolwcan">
+  
+  <meta name="description" content="一. 概念
+SSL ：Secure Socket Layer，安全套接字层。该协议由两层组成：SSL记录协议和SSL握手协议。
+TLS ：Transport Layer Security，传输层安全协议。该协议由两层组成：TLS记录协议和TLS握手协议。
+
+TLS 是 SSL 的升级版以及标准化。是">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="网络-SSL/TLS"/>
+  <meta property="og:site_name" content="coolwcan"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="//images/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="coolwcan" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//libs.baidu.com/jquery/1.8.0/jquery.min.js"></script>
+  <script>
+	$(function() {
+		$(".search").keydown(function(e){
+			if (e.keyCode==13) {
+                // var path = "/search.xml";
+                // searchFunc(path, 'local-search-input', 'local-search-result');
+			}
+		});
+	})
+
+    'use strict';
+	var search_id = 'local-search-input'
+    var content_id = 'local-search-result'
+    $.ajax({
+        url: '/search.xml',
+        dataType: "xml",
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                $resultContent.style.display = 'none'
+                var str='<ul class=\"entry search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length <= 0) {
+                    return;
+                }
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title !== '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            if( index_title < 0){
+                                isMatch = false;
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        str += "<li><a href='"+ data_url +"' class='search-result-title' target='_blank'>"+ "> " + data_title +"</a>";
+                    }
+                })
+                $resultContent.innerHTML = str;
+                if (str && str.length > 0) {
+                    $resultContent.style.display = 'block'
+                }
+            })
+        }
+    })
+
+
+  </script>
+</head>
+
+
+<body>
+  <header><div>
+    <nav class="animated">
+        <ul>
+            
+            <li><a href="/">Home</a></li>
+            
+            <li><a href="/about">About</a></li>
+            
+            <li><a href="/atom.xml">RSS</a></li>
+        </ul>
+    </nav>
+</div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header class="article-info clearfix">
+	<h1 itemprop="name">
+		网络-SSL/TLS
+	</h1>
+</header>
+    <div class="entry">
+        <h2 id="一-_概念">一. 概念</h2><ol>
+<li><code>SSL</code> ：<code>Secure Socket Layer</code>，安全套接字层。该协议由两层组成：SSL记录协议和SSL握手协议。</li>
+<li><code>TLS</code> ：<code>Transport Layer Security</code>，传输层安全协议。该协议由两层组成：TLS记录协议和TLS握手协议。</li>
+</ol>
+<p><code>TLS</code> 是 <code>SSL</code> 的升级版以及标准化。是网络层和应用层之间的一种安全协议。能够做到如下几点：</p>
+<ol>
+<li>认证用户和服务器，确保数据发送到正确的客户机和服务器</li>
+<li>加密数据以防止数据中途被窃取</li>
+<li>维护数据的完整性，确保数据在传输过程中不被改变</li>
+</ol>
+<h2 id="二-_CA基本概念">二. CA基本概念</h2><ul>
+<li>CA<br><code>Certificate Authority</code> 的缩写，也叫“证书授权中心”。</li>
+<li>对称加密<br>同一个密钥可以同时用作信息的加密和解密</li>
+<li>非对称加密<br>需要两个密钥来进行加密和解密</li>
+<li>数字签名<br>对需要加密的数据，生成摘要(digest)，然后用私钥，对摘要进行加密，生成后的数据为数字签名(signature)</li>
+<li>数字证书<br>由CA机构颁发，当申请者向CA申请成功后，CA会将申请者的信息，证书有效期，申请人的公钥，通过CA自己的 <strong>私钥</strong> 加密，生成数字证书。而数字证书只能通过CA的 <strong>公钥</strong> 解密。解密后就能取得其中的所包含的申请人的公钥信息。</li>
+<li>证书分类<ul>
+<li>DV，<code>Domain Validation</code>，面向个体用户，安全体系相对较弱，验证方式就是向 whois 信息中的邮箱发送邮件，按照邮件内容进行验证即可通过</li>
+<li>OV，<code>Organization Validation</code>，面向企业用户，证书在 DV 证书验证的基础上，还需要公司的授权，CA 通过拨打信息库中公司的电话来确认</li>
+<li>EV，<code>Extended Validation</code>，这类证书的申请除了以上两个确认外，还需要公司提供金融机构的开户许可证</li>
+</ul>
+</li>
+<li>证书认证链<br>证书认证链，是基于一个信任链(A信任B，B信任C，C信任D，那么D就是可信的)。那么针对证书而言，如果 D 需要可信，那么 C 就必须是可信的，以此类推。而每一个浏览器中内置了常见的 <code>Root CA</code>。根据 <code>x.509</code> 标准，每一个证书解密就能得到其中包含的公钥。一个网站向一个CA机构购买了一个证书，然后一个网站用户访问该网站时，浏览器会自动下载该网站的证书，然后进行安装，如果信任链中的某一个环节出错，就会提示 <strong>报证书不可信</strong>。<code>Root CA</code> 直接有公用密钥，所以二级证书，可以直接用 <code>Root CA</code> 的公钥进行解密，然后可以取出二级CA的公钥，以此类推就可以取得当前证书中所包含的所对应的CA的公钥。</li>
+</ul>
+<center><img src="/pics/CA认证链.png" alt=""></center>
+
+<h2 id="三-_详细：">三. 详细：</h2><h3 id="2-1_SSL">2.1 SSL</h3><ol>
+<li>协议组成<ol>
+<li>SSL记录协议<br>它建立在可靠的传输协议（如TCP）之上，为高层协议提供数据封装、压缩、加密等基本功能的支持，能够保证数据的安全性与完整性(利用共享的MAC密钥生成鉴别码)。</li>
+<li>SSL握手协议<br>它建立在SSL记录协议上，用于在实际的数据传输开始前，通讯双方进行身份认证、协商加密算法、交换加密密钥等</li>
+</ol>
+</li>
+<li><p>SSL协议的工作流程</p>
+<ol>
+<li>客户端给出协议版本号、成的随机数(Client random)，以及客户端支持的加密方法。</li>
+<li>服务器确认双方使用的加密方法，并给出数字证书、以及一个服务器生成的随机数(Server random)。</li>
+<li>客户端确认数字证书有效，然后生成一个新的随机数 (Premaster secret)，并使用数字证书中的公钥，加密这个随机数，发给服务器。</li>
+<li>服务器使用自己的私钥解密，获取客户端发来的随机数(Premaster secret)。</li>
+<li>客户端和服务器根据之前约定的加密方法，使用前面的三个随机数(Client random, Server random, Premaster secret)，生成 “对话密钥” (session key)，用来加密接下来的整个对话过程(对称加密，速度快，如果所有数据都通过非对称加密效率较慢)。</li>
+</ol>
+<p>以上的完全是基于 RSA ，只要 RSA 足够长，就能保证数据的安全性。也可以不使用 RSA 使用 DH 算法是一样的。</p>
+</li>
+</ol>
+<h3 id="2-2_TLS">2.2 TLS</h3><ol>
+<li>TLS是互联网标准化组织ISOC接替NetScape公司，是针对SSL的升级以及标准化。</li>
+<li>历史<br> 1994年，NetScape公司设计了SSL协议（Secure Sockets Layer）的1.0版，但是未发布。<br> 1995年，NetScape公司发布SSL 2.0版，很快发现有严重漏洞。<br> 1996年，SSL 3.0版问世，得到大规模应用。<br> 1999年，互联网标准化组织ISOC接替NetScape公司，发布了SSL的升级版TLS 1.0版。</li>
+</ol>
+<h2 id="四-_https的认证过程">四. https的认证过程</h2><center><img src="/pics/https.png" alt=""></center>
+
+
+
+    </div>
+    <footer>
+        
+	
+	<div class="categories">
+	<a href="/categories/Network/">Network</a>
+	</div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Network/">Network</a>, <a href="/tags/SSL-TLS/">SSL/TLS</a>
+  </div>
+
+        <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+ <nav id="pagination" >
+    
+    <a href="/Network/Network/TCP中SEQ与ACK/" class="alignleft prev" title="TCP中的seq与ack">TCP中的seq与ack</a>
+    
+    
+    <a href="/Network/Network/DNS/" class="alignright next" title="DNS">DNS</a>
+    
+    <div class="clearfix"></div>
+</nav>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="widget author-meta">
+    <div class="author-avatar">
+        <img src="/images/author.jpg">
+    </div>
+    <div class="author-name">coolwcan</div>
+    <div class="author-work">Java Developer</div>
+    <div class="author-location">
+        <i class="icon-location"></i>
+        <span>四川成都</span>
+    </div>
+    <div class="social-font">
+        
+        <a href="https://github.com/coolwcan" target="_blank" title="github"></a>
+        
+        
+        <a href="mailto:coolwcan@163.com" target="_blank" class="icon-email" title="email"></a>
+        
+    </div>
+</div>
+
+
+  <div class="widget search" style="margin-bottom: 30px">
+    <input id="local-search-input" class="search" type="search" placeholder="搜索">
+    <div id="local-search-result" style="display: none;" class="entry"></div>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    
+        <li><a href="/categories/Algorithm/">Algorithm</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/C-C/">C/C++</a><small>21</small></li>
+    
+  
+    
+        <li><a href="/categories/Coding/">Coding</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Computer/">Computer</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Database/">Database</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/DevOps/">DevOps</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Distributed/">Distributed</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Erlang/">Erlang</a><small>7</small></li>
+    
+  
+    
+        <li><a href="/categories/J2ee/">J2ee</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Java/">Java</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Life/">Life</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Network/">Network</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/Security/">Security</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/Shiro/">Shiro</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Tools/">Tools</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Web/">Web</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Zookeeper/">Zookeeper</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/配置中心/">配置中心</a><small>1</small></li>
+    
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/ACK/" style="font-size: 10px;">ACK</a> <a href="/tags/Archlinux/" style="font-size: 10px;">Archlinux</a> <a href="/tags/Arrays/" style="font-size: 10px;">Arrays</a> <a href="/tags/Base64/" style="font-size: 10px;">Base64</a> <a href="/tags/C-C/" style="font-size: 20px;">C/C++</a> <a href="/tags/CRC/" style="font-size: 10px;">CRC</a> <a href="/tags/Cache/" style="font-size: 10px;">Cache</a> <a href="/tags/Centos/" style="font-size: 10px;">Centos</a> <a href="/tags/Chrome/" style="font-size: 10px;">Chrome</a> <a href="/tags/Class/" style="font-size: 10px;">Class</a> <a href="/tags/Coding/" style="font-size: 10px;">Coding</a> <a href="/tags/Collection/" style="font-size: 11.43px;">Collection</a> <a href="/tags/Compile/" style="font-size: 10px;">Compile</a> <a href="/tags/Compiler/" style="font-size: 10px;">Compiler</a> <a href="/tags/Computer/" style="font-size: 11.43px;">Computer</a> <a href="/tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="/tags/DDos/" style="font-size: 10px;">DDos</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Database/" style="font-size: 10px;">Database</a> <a href="/tags/Deployment/" style="font-size: 10px;">Deployment</a> <a href="/tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="/tags/Distributed/" style="font-size: 10px;">Distributed</a> <a href="/tags/Efficiency/" style="font-size: 10px;">Efficiency</a> <a href="/tags/Erlang/" style="font-size: 15.71px;">Erlang</a> <a href="/tags/GC/" style="font-size: 10px;">GC</a> <a href="/tags/Generic/" style="font-size: 10px;">Generic</a> <a href="/tags/Git/" style="font-size: 10px;">Git</a> <a href="/tags/Intellij-Idea/" style="font-size: 10px;">Intellij Idea</a> <a href="/tags/J2ee/" style="font-size: 17.14px;">J2ee</a> <a href="/tags/JVM/" style="font-size: 10px;">JVM</a> <a href="/tags/Java/" style="font-size: 17.14px;">Java</a> <a href="/tags/JavaBean/" style="font-size: 10px;">JavaBean</a> <a href="/tags/Life/" style="font-size: 10px;">Life</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Memorty/" style="font-size: 10px;">Memorty</a> <a href="/tags/Memory/" style="font-size: 15.71px;">Memory</a> <a href="/tags/MySQL/" style="font-size: 10px;">MySQL</a> <a href="/tags/NAT/" style="font-size: 10px;">NAT</a> <a href="/tags/Network/" style="font-size: 14.29px;">Network</a> <a href="/tags/Object-oriented/" style="font-size: 10px;">Object-oriented</a> <a href="/tags/Optimize/" style="font-size: 11.43px;">Optimize</a> <a href="/tags/REST/" style="font-size: 10px;">REST</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/Release/" style="font-size: 10px;">Release</a> <a href="/tags/SEQ/" style="font-size: 10px;">SEQ</a> <a href="/tags/SPI/" style="font-size: 10px;">SPI</a> <a href="/tags/SSL-TLS/" style="font-size: 11.43px;">SSL/TLS</a> <a href="/tags/SSO/" style="font-size: 10px;">SSO</a> <a href="/tags/Security/" style="font-size: 12.86px;">Security</a> <a href="/tags/Session/" style="font-size: 11.43px;">Session</a> <a href="/tags/Shell/" style="font-size: 10px;">Shell</a> <a href="/tags/Shiro/" style="font-size: 15.71px;">Shiro</a> <a href="/tags/Sort/" style="font-size: 10px;">Sort</a> <a href="/tags/Source-codes-analysis/" style="font-size: 17.14px;">Source codes analysis</a> <a href="/tags/Spring-MVC/" style="font-size: 11.43px;">Spring MVC</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/Test/" style="font-size: 10px;">Test</a> <a href="/tags/Tomcat/" style="font-size: 10px;">Tomcat</a> <a href="/tags/Tools/" style="font-size: 18.57px;">Tools</a> <a href="/tags/Ubuntu/" style="font-size: 10px;">Ubuntu</a> <a href="/tags/Vim/" style="font-size: 10px;">Vim</a> <a href="/tags/Xss/" style="font-size: 10px;">Xss</a> <a href="/tags/Zookeeper/" style="font-size: 12.86px;">Zookeeper</a> <a href="/tags/ets/" style="font-size: 10px;">ets</a> <a href="/tags/热更新/" style="font-size: 10px;">热更新</a> <a href="/tags/高并发/" style="font-size: 10px;">高并发</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.bootcss.com/mathjax/2.7.4/latest.js">
+</script>
+</body>
+</html>

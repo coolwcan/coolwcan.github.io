@@ -1,0 +1,357 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Shiro-04-如何是与Spring集成的 | coolwcan</title>
+  <meta name="author" content="coolwcan">
+  
+  <meta name="description" content="0. 引入在对 Shiro 的使用中，更多的是用在 Spring MVC 中，那么 Shiro 是如何集成到 Spring MVC 中的呢？我只是先大概说明一下步骤:
+
+引用 shiro-spring 的maven依赖
+在 web.xml 配置一个名为 shiroFilter，类为 org.spri">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Shiro-04-如何是与Spring集成的"/>
+  <meta property="og:site_name" content="coolwcan"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="//images/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="coolwcan" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//libs.baidu.com/jquery/1.8.0/jquery.min.js"></script>
+  <script>
+	$(function() {
+		$(".search").keydown(function(e){
+			if (e.keyCode==13) {
+                // var path = "/search.xml";
+                // searchFunc(path, 'local-search-input', 'local-search-result');
+			}
+		});
+	})
+
+    'use strict';
+	var search_id = 'local-search-input'
+    var content_id = 'local-search-result'
+    $.ajax({
+        url: '/search.xml',
+        dataType: "xml",
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                $resultContent.style.display = 'none'
+                var str='<ul class=\"entry search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length <= 0) {
+                    return;
+                }
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title !== '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            if( index_title < 0){
+                                isMatch = false;
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        str += "<li><a href='"+ data_url +"' class='search-result-title' target='_blank'>"+ "> " + data_title +"</a>";
+                    }
+                })
+                $resultContent.innerHTML = str;
+                if (str && str.length > 0) {
+                    $resultContent.style.display = 'block'
+                }
+            })
+        }
+    })
+
+
+  </script>
+</head>
+
+
+<body>
+  <header><div>
+    <nav class="animated">
+        <ul>
+            
+            <li><a href="/">Home</a></li>
+            
+            <li><a href="/about">About</a></li>
+            
+            <li><a href="/atom.xml">RSS</a></li>
+        </ul>
+    </nav>
+</div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header class="article-info clearfix">
+	<h1 itemprop="name">
+		Shiro-04-如何是与Spring集成的
+	</h1>
+</header>
+    <div class="entry">
+        <h3 id="0-_引入">0. 引入</h3><p>在对 <code>Shiro</code> 的使用中，更多的是用在 <code>Spring MVC</code> 中，那么 <code>Shiro</code> 是如何集成到 <code>Spring MVC</code> 中的呢？我只是先大概说明一下步骤:</p>
+<ol>
+<li>引用 <code>shiro-spring</code> 的maven依赖</li>
+<li>在 <code>web.xml</code> 配置一个名为 <code>shiroFilter</code>，类为 <code>org.springframework.web.filter.DelegatingFilterProxy</code>的 Filter，拦截所有请求</li>
+<li>在 <code>Spring</code> 容器中配置一个名为 <code>shiroFilter</code>，类为 <code>org.apache.shiro.spring.web.ShiroFilterFactoryBean</code> 的 <code>Bean</code></li>
+<li>实现自定义的 <code>Realm</code></li>
+<li>使用过程，使用 <code>@RequiresPermissions</code> 等注解</li>
+</ol>
+<p>根据以上的步骤，可以将该问题，拆分成两个小的问题:</p>
+<ol>
+<li>ShiroFilterFactoryBean 到底做了些什么</li>
+<li><code>@RequiresPermissions</code> 这些注解是如何生效的</li>
+</ol>
+<h3 id="1-_ShiroFilterFactoryBean">1. ShiroFilterFactoryBean</h3><p>该类的属性如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">private SecurityManager securityManager;</span><br><span class="line">private Map&lt;String, Filter&gt; filters;</span><br><span class="line">private Map&lt;String, String&gt; filterChainDefinitionMap;</span><br><span class="line">private String loginUrl;</span><br><span class="line">private String successUrl;</span><br><span class="line">private String unauthorizedUrl;</span><br><span class="line">private AbstractShiroFilter instance;</span><br></pre></td></tr></table></figure>
+<p>需要解释的字段:</p>
+<ol>
+<li><p><code>Map&lt;String, Filter&gt; filters</code><br>在 <code>org.apache.shiro.web.filter.mgt.DefaultFilter</code> 定义了一个enum，该枚举的作用，是通过枚举的名字建立与对应的Filter的关系，此处是一个扩展点，用于建立用户自定义的名字与一个特定的Filter的关系。eg:</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;property name=&quot;filters&quot;&gt;</span><br><span class="line"> &lt;map&gt;</span><br><span class="line">  &lt;entry key=&quot;cas&quot; value-ref=&quot;casFilter&quot;/&gt;</span><br><span class="line"> &lt;/map&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+<p> 其默认的枚举如下:</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">anon(AnonymousFilter.class),</span><br><span class="line">authc(FormAuthenticationFilter.class),</span><br><span class="line">authcBasic(BasicHttpAuthenticationFilter.class),</span><br><span class="line">logout(LogoutFilter.class),</span><br><span class="line">noSessionCreation(NoSessionCreationFilter.class),</span><br><span class="line">perms(PermissionsAuthorizationFilter.class),</span><br><span class="line">port(PortFilter.class),</span><br><span class="line">rest(HttpMethodPermissionFilter.class),</span><br><span class="line">roles(RolesAuthorizationFilter.class),</span><br><span class="line">ssl(SslFilter.class),</span><br><span class="line">user(UserFilter.class);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>Map&lt;String, String&gt; filterChainDefinitionMap</code><br>设置不同的请求，所对应的Filter，路径是通过 <code>Ant</code> 匹配规则进行匹配的。eg:</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">   &lt;property name=&quot;filterChainDefinitions&quot;&gt;</span><br><span class="line">	&lt;value&gt;</span><br><span class="line">		/config_* = anon</span><br><span class="line">		/logout = logout</span><br><span class="line">		/cas/* = cas</span><br><span class="line">		/** = stUser</span><br><span class="line">	&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+<p> 可以使用默认定义的，也可以使用自定义的</p>
+</li>
+<li><code>AbstractShiroFilter instance</code><br>该 <code>FactoryBean</code> 创建的对象，是单例，所以记录创建的对象</li>
+</ol>
+<p>因为该类为 <code>FactoryBean</code> ，可以发现，在其 <code>getObject</code> 中会创建一个单例的 <code>SpringShiroFilter</code>, 这是一个内部类，在整个类中最核心的函数是 <code>AbstractShiroFilter createInstance() throws Exception</code>。其代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">protected AbstractShiroFilter createInstance() throws Exception &#123;</span><br><span class="line"></span><br><span class="line">    SecurityManager securityManager = getSecurityManager();</span><br><span class="line">    if (securityManager == null) &#123;</span><br><span class="line">        String msg = &quot;SecurityManager property must be set.&quot;;</span><br><span class="line">        throw new BeanInitializationException(msg);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (!(securityManager instanceof WebSecurityManager)) &#123;</span><br><span class="line">        String msg = &quot;The security manager does not implement the WebSecurityManager interface.&quot;;</span><br><span class="line">        throw new BeanInitializationException(msg);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    FilterChainManager manager = createFilterChainManager();</span><br><span class="line">    PathMatchingFilterChainResolver chainResolver = new PathMatchingFilterChainResolver();</span><br><span class="line">    chainResolver.setFilterChainManager(manager);</span><br><span class="line"></span><br><span class="line">    return new SpringShiroFilter((WebSecurityManager) securityManager, chainResolver);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上代码做了三件事:</p>
+<ol>
+<li>检查 <code>SecurityManager</code></li>
+<li>创建 <code>FilterChainManager</code>，<code>PathMatchingFilterChainResolver</code></li>
+<li>生成 <code>SpringShiroFilter</code> 对象</li>
+</ol>
+<p><code>FilterChainManager</code> 其主要的是维护一个路径与Filter的关系， <code>PathMatchingFilterChainResolver</code> 会利用 <code>AntPathMatcher</code> 去匹配请求的路径，然后调用 <code>FilterChainManager</code> 获取一个对应的Filter去拦截请求。而 <code>SpringShiroFilter</code> 是对 <code>AbstractShiroFilter</code> 的一个包装，而且该Filter拦截所有的请求，然后选择相应的Filter进行处理。（<code>ShiroFilterFactoryBean</code> 为一个 <code>FactoryBean</code>， 在反射过程中，会直接调用其 <code>getObject</code> 方法，生成 <code>SpringShiroFilter</code>）</p>
+<h3 id="2-_如何在每一个请求中，注入_Subject_对象？">2. 如何在每一个请求中，注入 Subject 对象？</h3><p>在分析 <code>ShiroFilterFactoryBean</code> 可以发现，其最终会生成 <code>SpringShiroFilter</code>，然后根据不同的请求路径，让相应的Filter去拦截处理。但是有一个问题，不一定是每一个请求都是进入同一个线程中，那它是在什么时候，将已经认证过的 <code>Subject</code> 注入到 <code>ThreadContext</code> 对象中去的呢？查看 <code>SpringShiroFilter</code>，顺序着 <code>doFilter</code> (Filter的过滤函数)去找，发现在 <code>SpringShiroFilter</code> 的父类 <code>AbstractShiroFilter</code> 的 <code>doFilterInternal</code> 方法有如下的代码:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">protected void doFilterInternal(ServletRequest servletRequest, ServletResponse servletResponse, final FilterChain chain)</span><br><span class="line">        throws ServletException, IOException &#123;</span><br><span class="line">    Throwable t = null;</span><br><span class="line">    try &#123;</span><br><span class="line">        final ServletRequest request = prepareServletRequest(servletRequest, servletResponse, chain);</span><br><span class="line">        final ServletResponse response = prepareServletResponse(request, servletResponse, chain);</span><br><span class="line"></span><br><span class="line">        final Subject subject = createSubject(request, response);</span><br><span class="line"></span><br><span class="line">        //noinspection unchecked</span><br><span class="line">        subject.execute(new Callable() &#123;</span><br><span class="line">            public Object call() throws Exception &#123;</span><br><span class="line">                updateSessionLastAccessTime(request, response);</span><br><span class="line">                executeChain(request, response, chain);</span><br><span class="line">                return null;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>省略了一些代码，发现 <code>final Subject subject = createSubject(request, response);</code> 每次都会创建一个新的 <code>WebSubject</code> ，那么它是如何取得之前的登录信息呢，不能做一个全局的缓存，因为不能与某一个未认证的用户建立关系，所以有一个感觉，应该是存在于 <code>Session</code> 中,事实上也是如此。看一下 <code>DefaultSecurityManager</code> 中的 <code>Subject createSubject(SubjectContext subjectContext)</code> 方法，该方法会在 <code>login</code> 时，创建 <code>Subject</code> 时，被调用，其代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public Subject createSubject(SubjectContext subjectContext) &#123;</span><br><span class="line">    SubjectContext context = copy(subjectContext);</span><br><span class="line">    context = ensureSecurityManager(context);</span><br><span class="line">    context = resolveSession(context);</span><br><span class="line">    context = resolvePrincipals(context);</span><br><span class="line">    Subject subject = doCreateSubject(context);</span><br><span class="line">    save(subject);</span><br><span class="line">    return subject;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其 <code>save</code> 方法 会将认证信息放到 <code>Session</code> 中。在创建 <code>WebSubject</code> 时，会调用 <code>DefaultWebSubjectFactory</code> 去创建 <code>WebSubject</code> ，代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">public Subject createSubject(SubjectContext context) &#123;</span><br><span class="line">    if (!(context instanceof WebSubjectContext)) &#123;</span><br><span class="line">        return super.createSubject(context);</span><br><span class="line">    &#125;</span><br><span class="line">    WebSubjectContext wsc = (WebSubjectContext) context;</span><br><span class="line">    SecurityManager securityManager = wsc.resolveSecurityManager();</span><br><span class="line">    Session session = wsc.resolveSession();</span><br><span class="line">    boolean sessionEnabled = wsc.isSessionCreationEnabled();</span><br><span class="line">    PrincipalCollection principals = wsc.resolvePrincipals();</span><br><span class="line">    boolean authenticated = wsc.resolveAuthenticated();</span><br><span class="line">    String host = wsc.resolveHost();</span><br><span class="line">    ServletRequest request = wsc.resolveServletRequest();</span><br><span class="line">    ServletResponse response = wsc.resolveServletResponse();</span><br><span class="line"></span><br><span class="line">    return new WebDelegatingSubject(principals, authenticated, host, session, sessionEnabled,</span><br><span class="line">            request, response, securityManager);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中有很多的 <code>wsc.resolveXXXX</code> 这类的代码，就可以看到其在执行过程，最终会落实到从 <code>Session</code> 中取数据。最后附上所有的Filter的类关系图:</p>
+<center><img src="/pics/Shiro-Filter.png" alt=""></center>
+
+<h3 id="3-_@RequiresPermissions_这些注解是如何生效的？">3. <code>@RequiresPermissions</code> 这些注解是如何生效的？</h3><p>在 <code>Shiro</code> 对AOP提供了两种支持，一种支持 <code>AOP Alliance</code>，另一种是 <code>Shiro</code> 自己定义的AOP接口。因为在 <code>Spring</code> 中是用的 <code>AOP Alliance</code> 所定义的接口。粗略地看一下其接口，有如下几个类:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Advice</span><br><span class="line">AspectException</span><br><span class="line">ConstructorInterceptor</span><br><span class="line">ConstructorInvocation</span><br><span class="line">Interceptor</span><br><span class="line">Invocation</span><br><span class="line">Joinpoint</span><br><span class="line">MethodInterceptor</span><br><span class="line">MethodInvocation</span><br></pre></td></tr></table></figure>
+<p>针对 AOP ，此处提出了两个概念 <code>Advice</code> 和 <code>Joinpoint</code>， <code>Joinpoint</code> 代表切面的对象，<code>Advice</code> 代表对该切面点的处理。而所有的 <code>Interceptor</code> 是 <code>Advice</code>，而所有的 <code>Invocation</code> 代表 <code>Joinpoint</code>。在 <code>Shiro</code> 项目中的 <code>aspectj</code> 的模块中，有一个 <code>ShiroAnnotationAuthorizingAspect</code>，其代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">@Aspect()</span><br><span class="line">public class ShiroAnnotationAuthorizingAspect &#123;</span><br><span class="line"></span><br><span class="line">    private static final String pointCupExpression =</span><br><span class="line">            &quot;execution(@org.apache.shiro.authz.annotation.RequiresAuthentication * *(..)) || &quot; +</span><br><span class="line">                    &quot;execution(@org.apache.shiro.authz.annotation.RequiresGuest * *(..)) || &quot; +</span><br><span class="line">                    &quot;execution(@org.apache.shiro.authz.annotation.RequiresPermissions * *(..)) || &quot; +</span><br><span class="line">                    &quot;execution(@org.apache.shiro.authz.annotation.RequiresRoles * *(..)) || &quot; +</span><br><span class="line">                    &quot;execution(@org.apache.shiro.authz.annotation.RequiresUser * *(..))&quot;;</span><br><span class="line"></span><br><span class="line">    @Pointcut(pointCupExpression)</span><br><span class="line">    public void anyShiroAnnotatedMethod()&#123;&#125;</span><br><span class="line"></span><br><span class="line">    @Pointcut(pointCupExpression)</span><br><span class="line">    void anyShiroAnnotatedMethodCall(JoinPoint thisJoinPoint) &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private AspectjAnnotationsAuthorizingMethodInterceptor interceptor =</span><br><span class="line">            new AspectjAnnotationsAuthorizingMethodInterceptor();</span><br><span class="line"></span><br><span class="line">    @Before(&quot;anyShiroAnnotatedMethodCall(thisJoinPoint)&quot;)</span><br><span class="line">    public void executeAnnotatedMethod(JoinPoint thisJoinPoint) throws Throwable &#123;</span><br><span class="line">        interceptor.performBeforeInterception(thisJoinPoint);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看到这里，我想大概应该很熟悉了，其关键点在于 <code>interceptor.performBeforeInterception(thisJoinPoint)</code> 这行代码，顺着这条线看下去，会在 <code>AnnotationsAuthorizingMethodInterceptor</code> 类里看到这样一个方法:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">protected void assertAuthorized(MethodInvocation methodInvocation) throws AuthorizationException &#123;</span><br><span class="line">    //default implementation just ensures no deny votes are cast:</span><br><span class="line">    Collection&lt;AuthorizingAnnotationMethodInterceptor&gt; aamis = getMethodInterceptors();</span><br><span class="line">    if (aamis != null &amp;&amp; !aamis.isEmpty()) &#123;</span><br><span class="line">        for (AuthorizingAnnotationMethodInterceptor aami : aamis) &#123;</span><br><span class="line">            if (aami.supports(methodInvocation)) &#123;</span><br><span class="line">                aami.assertAuthorized(methodInvocation);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中的 <code>getMethodInterceptors()</code> 返回的是在构造函数初始化的几个 <code>Interceptor</code>，其代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">methodInterceptors = new ArrayList&lt;AuthorizingAnnotationMethodInterceptor&gt;(5);</span><br><span class="line">methodInterceptors.add(new RoleAnnotationMethodInterceptor());</span><br><span class="line">methodInterceptors.add(new PermissionAnnotationMethodInterceptor());</span><br><span class="line">methodInterceptors.add(new AuthenticatedAnnotationMethodInterceptor());</span><br><span class="line">methodInterceptors.add(new UserAnnotationMethodInterceptor());</span><br><span class="line">methodInterceptors.add(new GuestAnnotationMethodInterceptor());</span><br></pre></td></tr></table></figure>
+<p>结合上面的两段代码，再看一下这几个 <code>Interceptor</code> 我想你就能够明白了，根据其注解的类型，选择相应的 <code>Interceptor</code> 去进行处理，其处理的过程，最终会在相应的 <code>AnnotationHandler</code> 中进行处理。</p>
+<h3 id="4-_总结">4. 总结</h3><p>以上就是通过带着问题的方式，去看 <code>Shiro</code> 如何去 <code>Spring</code> 的集成，其中省略了很多的代码，上面展示的只是看代码的一个过程，及其最终的结果，中间的步骤，需要大家根据其中的思路继续深入，才能理解在这个框架中，给我们带来的思想与灵感。</p>
+
+    </div>
+    <footer>
+        
+	
+	<div class="categories">
+	<a href="/categories/Shiro/">Shiro</a>
+	</div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Shiro/">Shiro</a>, <a href="/tags/Source-codes-analysis/">Source codes analysis</a>
+  </div>
+
+        <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+ <nav id="pagination" >
+    
+    <a href="/Shiro/Shiro/Shiro-03-Shiro的框架结构/" class="alignleft prev" title="Shiro-03-Shiro的框架结构">Shiro-03-Shiro的框架结构</a>
+    
+    
+    <a href="/Shiro/Shiro/Shiro-01-简介/" class="alignright next" title="Shiro-01-简介">Shiro-01-简介</a>
+    
+    <div class="clearfix"></div>
+</nav>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="widget author-meta">
+    <div class="author-avatar">
+        <img src="/images/author.jpg">
+    </div>
+    <div class="author-name">coolwcan</div>
+    <div class="author-work">Java Developer</div>
+    <div class="author-location">
+        <i class="icon-location"></i>
+        <span>四川成都</span>
+    </div>
+    <div class="social-font">
+        
+        <a href="https://github.com/coolwcan" target="_blank" title="github"></a>
+        
+        
+        <a href="mailto:coolwcan@163.com" target="_blank" class="icon-email" title="email"></a>
+        
+    </div>
+</div>
+
+
+  <div class="widget search" style="margin-bottom: 30px">
+    <input id="local-search-input" class="search" type="search" placeholder="搜索">
+    <div id="local-search-result" style="display: none;" class="entry"></div>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    
+        <li><a href="/categories/Algorithm/">Algorithm</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/C-C/">C/C++</a><small>21</small></li>
+    
+  
+    
+        <li><a href="/categories/Coding/">Coding</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Computer/">Computer</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Database/">Database</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/DevOps/">DevOps</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Distributed/">Distributed</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Erlang/">Erlang</a><small>7</small></li>
+    
+  
+    
+        <li><a href="/categories/J2ee/">J2ee</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Java/">Java</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Life/">Life</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Network/">Network</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/Security/">Security</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/Shiro/">Shiro</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Tools/">Tools</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Web/">Web</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Zookeeper/">Zookeeper</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/配置中心/">配置中心</a><small>1</small></li>
+    
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/ACK/" style="font-size: 10px;">ACK</a> <a href="/tags/Archlinux/" style="font-size: 10px;">Archlinux</a> <a href="/tags/Arrays/" style="font-size: 10px;">Arrays</a> <a href="/tags/Base64/" style="font-size: 10px;">Base64</a> <a href="/tags/C-C/" style="font-size: 20px;">C/C++</a> <a href="/tags/CRC/" style="font-size: 10px;">CRC</a> <a href="/tags/Cache/" style="font-size: 10px;">Cache</a> <a href="/tags/Centos/" style="font-size: 10px;">Centos</a> <a href="/tags/Chrome/" style="font-size: 10px;">Chrome</a> <a href="/tags/Class/" style="font-size: 10px;">Class</a> <a href="/tags/Coding/" style="font-size: 10px;">Coding</a> <a href="/tags/Collection/" style="font-size: 11.43px;">Collection</a> <a href="/tags/Compile/" style="font-size: 10px;">Compile</a> <a href="/tags/Compiler/" style="font-size: 10px;">Compiler</a> <a href="/tags/Computer/" style="font-size: 11.43px;">Computer</a> <a href="/tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="/tags/DDos/" style="font-size: 10px;">DDos</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Database/" style="font-size: 10px;">Database</a> <a href="/tags/Deployment/" style="font-size: 10px;">Deployment</a> <a href="/tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="/tags/Distributed/" style="font-size: 10px;">Distributed</a> <a href="/tags/Efficiency/" style="font-size: 10px;">Efficiency</a> <a href="/tags/Erlang/" style="font-size: 15.71px;">Erlang</a> <a href="/tags/GC/" style="font-size: 10px;">GC</a> <a href="/tags/Generic/" style="font-size: 10px;">Generic</a> <a href="/tags/Git/" style="font-size: 10px;">Git</a> <a href="/tags/Intellij-Idea/" style="font-size: 10px;">Intellij Idea</a> <a href="/tags/J2ee/" style="font-size: 17.14px;">J2ee</a> <a href="/tags/JVM/" style="font-size: 10px;">JVM</a> <a href="/tags/Java/" style="font-size: 17.14px;">Java</a> <a href="/tags/JavaBean/" style="font-size: 10px;">JavaBean</a> <a href="/tags/Life/" style="font-size: 10px;">Life</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Memorty/" style="font-size: 10px;">Memorty</a> <a href="/tags/Memory/" style="font-size: 15.71px;">Memory</a> <a href="/tags/MySQL/" style="font-size: 10px;">MySQL</a> <a href="/tags/NAT/" style="font-size: 10px;">NAT</a> <a href="/tags/Network/" style="font-size: 14.29px;">Network</a> <a href="/tags/Object-oriented/" style="font-size: 10px;">Object-oriented</a> <a href="/tags/Optimize/" style="font-size: 11.43px;">Optimize</a> <a href="/tags/REST/" style="font-size: 10px;">REST</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/Release/" style="font-size: 10px;">Release</a> <a href="/tags/SEQ/" style="font-size: 10px;">SEQ</a> <a href="/tags/SPI/" style="font-size: 10px;">SPI</a> <a href="/tags/SSL-TLS/" style="font-size: 11.43px;">SSL/TLS</a> <a href="/tags/SSO/" style="font-size: 10px;">SSO</a> <a href="/tags/Security/" style="font-size: 12.86px;">Security</a> <a href="/tags/Session/" style="font-size: 11.43px;">Session</a> <a href="/tags/Shell/" style="font-size: 10px;">Shell</a> <a href="/tags/Shiro/" style="font-size: 15.71px;">Shiro</a> <a href="/tags/Sort/" style="font-size: 10px;">Sort</a> <a href="/tags/Source-codes-analysis/" style="font-size: 17.14px;">Source codes analysis</a> <a href="/tags/Spring-MVC/" style="font-size: 11.43px;">Spring MVC</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/Test/" style="font-size: 10px;">Test</a> <a href="/tags/Tomcat/" style="font-size: 10px;">Tomcat</a> <a href="/tags/Tools/" style="font-size: 18.57px;">Tools</a> <a href="/tags/Ubuntu/" style="font-size: 10px;">Ubuntu</a> <a href="/tags/Vim/" style="font-size: 10px;">Vim</a> <a href="/tags/Xss/" style="font-size: 10px;">Xss</a> <a href="/tags/Zookeeper/" style="font-size: 12.86px;">Zookeeper</a> <a href="/tags/ets/" style="font-size: 10px;">ets</a> <a href="/tags/热更新/" style="font-size: 10px;">热更新</a> <a href="/tags/高并发/" style="font-size: 10px;">高并发</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.bootcss.com/mathjax/2.7.4/latest.js">
+</script>
+</body>
+</html>

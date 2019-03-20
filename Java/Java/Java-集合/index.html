@@ -1,0 +1,635 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Java-集合类 | coolwcan</title>
+  <meta name="author" content="coolwcan">
+  
+  <meta name="description" content="一、简介集合是开发中常用的工具，在 Java 中大概有如下几类集合:
+
+List 是一个有序的集合
+Set 不能包含重复元素的有序集合
+Queue 特殊的List，只能按照指定方式入队和出队
+Map 由一系列的键值对组成的集合
+
+其继承关系如下:˙
+
+
+二、List
+
+
+类名
+作用
+是否线程安全
+备">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Java-集合类"/>
+  <meta property="og:site_name" content="coolwcan"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="//images/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="coolwcan" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//libs.baidu.com/jquery/1.8.0/jquery.min.js"></script>
+  <script>
+	$(function() {
+		$(".search").keydown(function(e){
+			if (e.keyCode==13) {
+                // var path = "/search.xml";
+                // searchFunc(path, 'local-search-input', 'local-search-result');
+			}
+		});
+	})
+
+    'use strict';
+	var search_id = 'local-search-input'
+    var content_id = 'local-search-result'
+    $.ajax({
+        url: '/search.xml',
+        dataType: "xml",
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                $resultContent.style.display = 'none'
+                var str='<ul class=\"entry search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length <= 0) {
+                    return;
+                }
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title !== '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            if( index_title < 0){
+                                isMatch = false;
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        str += "<li><a href='"+ data_url +"' class='search-result-title' target='_blank'>"+ "> " + data_title +"</a>";
+                    }
+                })
+                $resultContent.innerHTML = str;
+                if (str && str.length > 0) {
+                    $resultContent.style.display = 'block'
+                }
+            })
+        }
+    })
+
+
+  </script>
+</head>
+
+
+<body>
+  <header><div>
+    <nav class="animated">
+        <ul>
+            
+            <li><a href="/">Home</a></li>
+            
+            <li><a href="/about">About</a></li>
+            
+            <li><a href="/atom.xml">RSS</a></li>
+        </ul>
+    </nav>
+</div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header class="article-info clearfix">
+	<h1 itemprop="name">
+		Java-集合类
+	</h1>
+</header>
+    <div class="entry">
+        <h3 id="一、简介">一、简介</h3><p>集合是开发中常用的工具，在 Java 中大概有如下几类集合:</p>
+<ul>
+<li><code>List</code> 是一个有序的集合</li>
+<li><code>Set</code> 不能包含重复元素的有序集合</li>
+<li><code>Queue</code> 特殊的List，只能按照指定方式入队和出队</li>
+<li><code>Map</code> 由一系列的键值对组成的集合</li>
+</ul>
+<p>其继承关系如下:˙</p>
+<center><img src="/pics/Collection.png" alt="collection"></center><br><center><img src="/pics/Map.png" alt="map"></center>
+
+<h3 id="二、List">二、List</h3><table>
+<thead>
+<tr>
+<th>类名</th>
+<th>作用</th>
+<th>是否线程安全</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ArrayList</td>
+<td>有序集合</td>
+<td>否</td>
+<td>能够提供高效的随机访问，但是插入、删除操作可能会触发扩容</td>
+</tr>
+<tr>
+<td>LinkedList</td>
+<td>基于链表实现的有序集合</td>
+<td>否</td>
+<td>能够提供高效的插入与删除操作，随机访问、遍历的效率不高</td>
+</tr>
+<tr>
+<td>Vector</td>
+<td>线程安全的ArrayList</td>
+<td>是</td>
+<td>效率很低，不推荐使用，通常使用<code>Collections.synchronizedList</code>代替</td>
+</tr>
+<tr>
+<td>Stack</td>
+<td>基于Vector实现的一个后进先出的堆栈集合结构</td>
+<td>是</td>
+<td>不推荐使用，通常使用 <code>ArrayDeque</code> 进行代替</td>
+</tr>
+</tbody>
+</table>
+<h4 id="2-1_ArrayList如何扩容？">2.1 ArrayList如何扩容？</h4><p>在其中有如下的代码:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">private void grow(int minCapacity) &#123;</span><br><span class="line">    // overflow-conscious code</span><br><span class="line">    int oldCapacity = elementData.length;</span><br><span class="line">    int newCapacity = oldCapacity + (oldCapacity &gt;&gt; 1);</span><br><span class="line">    if (newCapacity - minCapacity &lt; 0)</span><br><span class="line">        newCapacity = minCapacity;</span><br><span class="line">    if (newCapacity - MAX_ARRAY_SIZE &gt; 0)</span><br><span class="line">        newCapacity = hugeCapacity(minCapacity);</span><br><span class="line">    // minCapacity is usually close to size, so this is a win:</span><br><span class="line">    elementData = Arrays.copyOf(elementData, newCapacity);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>可以看的会扩容后的大小为原大小的 <strong>1.5倍</strong>，并且将原来的数据拷贝到新的数组中。</li>
+<li>注意在 <code>Vector</code> 也有 <code>grow</code> 函数，通过其代码，可以看到，其默认的扩展为原来的 <strong>2倍</strong>。</li>
+<li>初始化时，默认的大小为 <code>10</code></li>
+</ul>
+<h4 id="2-2-_Vector为什么不推荐使用？">2.2. Vector为什么不推荐使用？</h4><p>主要有两个方面：</p>
+<ol>
+<li><code>Vector</code> 从jdk1.0就有，其方法的命名不规范，方法存在重复，例如<code>addElement</code>和<code>add</code></li>
+<li><code>Vector</code>的线程同步方式不高效，会针对每个单独的操作都进行加锁，在大多数情况，这是一种有缺陷的同步方式。相对于<code>Collections.synchronizedList</code> 而言，性能不高，而且其代码职责不明确</li>
+</ol>
+<h4 id="2-3-_如何实现一个线程安全的ArrayList和LinkedList?">2.3. 如何实现一个线程安全的ArrayList和LinkedList?</h4><p>可以通过 <code>Collections.synchronizedList</code> 创建一个线程安全的 <code>ArrayList</code>和<code>LinkedList</code>。<code>Vector</code>是通过<code>synchronized</code>关键字，锁的是类，而 <code>Collections.synchronizedList</code> 是通过：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">static class SynchronizedCollection&lt;E&gt; implements Collection&lt;E&gt;, Serializable &#123;</span><br><span class="line">        private static final long serialVersionUID = 3053995032091335093L;</span><br><span class="line"></span><br><span class="line">        final Collection&lt;E&gt; c;  // Backing Collection</span><br><span class="line">        final Object mutex;     // Object on which to synchronize</span><br><span class="line"></span><br><span class="line">        SynchronizedCollection(Collection&lt;E&gt; c) &#123;</span><br><span class="line">            this.c = Objects.requireNonNull(c);</span><br><span class="line">            mutex = this;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>锁的是对象，而且通过装饰模式的方式，能够做到只针对需要的操作才加锁，性能更高</p>
+<h4 id="2-4_ArrayList和Vector的区别？">2.4 ArrayList和Vector的区别？</h4><ul>
+<li>在同步性上，<code>ArrayList</code> 是非线程安全，而<code>Vector</code>是线程安全的; </li>
+<li>在扩容方面，<code>ArrayList</code>默认扩容了原来的0.5倍的容量，而<code>Vector</code>直接将容量增加一倍</li>
+</ul>
+<h4 id="2-5_Enumeration和Iterator接口的区别">2.5 Enumeration和Iterator接口的区别</h4><ul>
+<li><code>Iterator</code>是JDK1.5开始才有的接口，而<code>Enumeration</code>是从JDK1.0开始的接口，在命名上<code>Iterator</code>命名更规范，而且<code>Iterator</code>的存在就是用于替代<code>Enumeration</code></li>
+<li><code>Iterator</code>有<code>fail-fast</code>机制</li>
+<li><code>Iterator</code>能够删除元素，<code>Enumeration</code>并不能删除元素</li>
+</ul>
+<h4 id="2-6_ListIterator有什么特点">2.6 ListIterator有什么特点</h4><p><code>ListIterator</code>继承自<code>Iterator</code>接口，除了<code>Iterator</code>所有相关的接口外，还提供了双向遍历、添加元素、修改元素的接口</p>
+<h3 id="三、Set">三、Set</h3><table>
+<thead>
+<tr>
+<th>类名</th>
+<th>作用</th>
+<th>是否线程安全</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HashSet</td>
+<td>无重复元素的无序集合</td>
+<td>无</td>
+<td>集合元素可以是null</td>
+</tr>
+<tr>
+<td>TreeSet</td>
+<td>生成一个总是处于排序状态的 <code>Set</code>，内部基于 <code>TreeMap</code> 进行实现，使用元素的自然顺序对元素进行排序，或提供 <code>Comparator</code> 接口，默认是从小到大的顺序排列。</td>
+<td>否</td>
+<td></td>
+</tr>
+<tr>
+<td>LinkedHashSet</td>
+<td>不仅能够保证数据的不重复，而且能够保存其存储的顺序</td>
+<td>否</td>
+<td>内部通过一个链表，保留元素插入的顺序，在迭代访问Set中的全部元素时，性能比HashSet好，但是插入时性能稍微逊色于HashSet</td>
+</tr>
+<tr>
+<td>EnumSet</td>
+<td>一个在Enum类型上处理更高效的HashSet</td>
+<td>否</td>
+<td>在处理Enum类型上，效率很高，不允许空元素，不会出现ConcurrentModificationException，有序</td>
+</tr>
+</tbody>
+</table>
+<h4 id="3-1_HashSet如何实现？">3.1 HashSet如何实现？</h4><p><code>HashSet</code>完全基于<code>HashMap</code>实现，可以将<code>HashSet</code>看成一个值固定的<code>HashMap</code>。</p>
+<h4 id="3-2_EnumSet的高效体现在什么地方？">3.2 EnumSet的高效体现在什么地方？</h4><p>一个<code>Enum</code>集合可以通过一个二进制数字表示，该数字的长度为枚举类型的<code>values()</code>值，每一个<code>Enum</code>为一个<code>bit</code>，每一个<code>Enum</code>根据其<code>ordinal</code>确定其位置，每一个<code>bit</code>的取值取决于当前集合是否包含这个<code>Enum</code>。例如:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">enum Day &#123;</span><br><span class="line">    MONDAY,</span><br><span class="line">    TUESDAY,</span><br><span class="line">    WEDNESDAY,</span><br><span class="line">    THURSDAY,</span><br><span class="line">    FRIDAY,</span><br><span class="line">    SATURDAY,</span><br><span class="line">    SUNDAY</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">EnumSet&lt;Day&gt; set = EnumSet.noneOf(Day.class);</span><br><span class="line">set.add(Day.MONDAY);</span><br><span class="line">set.add(Day.THURSDAY);</span><br></pre></td></tr></table></figure>
+<p>在 <code>idea</code> 中调试时，你可以看到 <code>((RegularEnumSet) set).elements</code> 的值为9。数字9与<code>Enum</code>的对应关系如下:</p>
+   <center><img src="/pics/Java-Collection-EnumSet.png" alt=""></center>
+
+<p>其对集合的操作现在变成了对bit的操作，所以非常高效。</p>
+<p>需要注意如下几点:</p>
+<ul>
+<li>EnumSet是一个抽象类，是不能直接实例化的</li>
+<li>EnumSet有两个实现类，分别是<code>RegularEnumSet</code>和<code>JumboEnumSet</code></li>
+</ul>
+<p>在<code>EnumSet</code>中有如下的一段代码:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public static &lt;E extends Enum&lt;E&gt;&gt; EnumSet&lt;E&gt; noneOf(Class&lt;E&gt; elementType) &#123;</span><br><span class="line">    Enum&lt;?&gt;[] universe = getUniverse(elementType);</span><br><span class="line">    if (universe == null)</span><br><span class="line">        throw new ClassCastException(elementType + &quot; not an enum&quot;);</span><br><span class="line"></span><br><span class="line">    if (universe.length &lt;= 64)</span><br><span class="line">        return new RegularEnumSet&lt;&gt;(elementType, universe);</span><br><span class="line">    else</span><br><span class="line">        return new JumboEnumSet&lt;&gt;(elementType, universe);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看出当<code>Enum</code>的个数小于等于64时，会使用<code>RegularEnumSet</code>，大于64时，会使用<code>JumboEnumSet</code>。<code>RegularEnumSet</code>使用一个<code>long</code>类型来表示集合，而<code>JumboEnumSet</code>使用<code>long[]</code>来表示。当使用<code>long[]</code>会根据<code>ordinal</code>值确定其分部在那个<code>long</code>上。</p>
+<h4 id="3-3_LinkedHashSet是如何实现？">3.3 LinkedHashSet是如何实现？</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">public class LinkedHashSet&lt;E&gt;</span><br><span class="line">    extends HashSet&lt;E&gt;</span><br><span class="line">    implements Set&lt;E&gt;, Cloneable, java.io.Serializable &#123;</span><br><span class="line"></span><br><span class="line">    private static final long serialVersionUID = -2851667679971038690L;</span><br><span class="line"></span><br><span class="line">    public LinkedHashSet(int initialCapacity, float loadFactor) &#123;</span><br><span class="line">        super(initialCapacity, loadFactor, true);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public LinkedHashSet(int initialCapacity) &#123;</span><br><span class="line">        super(initialCapacity, .75f, true);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public LinkedHashSet() &#123;</span><br><span class="line">        super(16, .75f, true);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public LinkedHashSet(Collection&lt;? extends E&gt; c) &#123;</span><br><span class="line">        super(Math.max(2*c.size(), 11), .75f, true);</span><br><span class="line">        addAll(c);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    @Override</span><br><span class="line">    public Spliterator&lt;E&gt; spliterator() &#123;</span><br><span class="line">        return Spliterators.spliterator(this, Spliterator.DISTINCT | Spliterator.ORDERED);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这就是 <code>LinkedHashSet</code>的全部代码，其继承自<code>HashSet</code>，只调整了构造方法和<code>spliterator</code>外。构造方法几乎全部调用父类的构造方法，其父类的构造方法如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HashSet(int initialCapacity, float loadFactor, boolean dummy) &#123;</span><br><span class="line">    map = new LinkedHashMap&lt;&gt;(initialCapacity, loadFactor);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看出是基于<code>LinkedHashMap</code>去实现的。</p>
+<h3 id="四、Queue">四、Queue</h3><p>为“先进先出”（FIFO）</p>
+<table>
+<thead>
+<tr>
+<th>类名</th>
+<th>作用</th>
+<th>是否线程安全</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PriorityQueue</td>
+<td>每次从队列中取出的是具有最高优先权的元素，即值最小的元素，通过小顶堆实现，需要提供 <code>Comparator</code> 接口</td>
+<td>否</td>
+<td>并不是按照添加元素的顺序来排列元素，而是按照队列元素的大小进行由小到大排序，所以PriorityQueue不允许插入null元素</td>
+</tr>
+</tbody>
+</table>
+<p>主要主要的方法如下：</p>
+<table>
+<thead>
+<tr>
+<th>类名</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>add</td>
+<td>增加一个元索，如果队列已满，则抛出一个IllegalStateException异常</td>
+</tr>
+<tr>
+<td>put</td>
+<td>添加一个元素，如果队列满，则阻塞</td>
+</tr>
+<tr>
+<td>offer</td>
+<td>添加一个元素并返回true，如果队列已满，则返回false</td>
+</tr>
+<tr>
+<td>element</td>
+<td>返回队列头部的元素，如果队列为空，则抛出一个NoSuchElementException异常</td>
+</tr>
+<tr>
+<td>poll</td>
+<td>移除并返问队列头部的元素，如果队列为空，则返回null</td>
+</tr>
+<tr>
+<td>peek</td>
+<td>返回队列头部的元素，如果队列为空，则返回null</td>
+</tr>
+<tr>
+<td>take</td>
+<td>移除并返回队列头部的元素，如果队列为空，则阻塞</td>
+</tr>
+<tr>
+<td>remove</td>
+<td>移除并返回队列头部的元素    如果队列为空，则抛出一个NoSuchElementException异常</td>
+</tr>
+</tbody>
+</table>
+<h3 id="五、Deque">五、Deque</h3><p>代表一个双端队列，可以用来实现队列和栈</p>
+<table>
+<thead>
+<tr>
+<th>类名</th>
+<th>作用</th>
+<th>是否线程安全</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LinkedList</td>
+<td>一个链表实现的有序集合，能够提供高效的插入与删除操作</td>
+<td>否</td>
+<td></td>
+</tr>
+<tr>
+<td>ArrayDeque</td>
+<td>一个双向队列，既能够提供栈的功能，也能实现先进先出的队列</td>
+<td>否</td>
+<td>以循环数组实现的双向Queue，默认为16个元素</td>
+</tr>
+</tbody>
+</table>
+<h3 id="六、Map">六、Map</h3><table>
+<thead>
+<tr>
+<th>类名</th>
+<th>作用</th>
+<th>是否线程安全</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HashMap</td>
+<td>以哈希表为基础实现的键值对的集合结构，采用散列链表的结构</td>
+<td>否</td>
+<td>无序</td>
+</tr>
+<tr>
+<td>Hashtable</td>
+<td>线程安全的 HashMap</td>
+<td>是</td>
+<td>不推荐</td>
+</tr>
+<tr>
+<td>LinkedHashMap</td>
+<td>不仅仅保存了HashMap的特性，而且还能够保证数据的先后顺序</td>
+<td>否</td>
+<td>有序</td>
+</tr>
+<tr>
+<td>TreeMap</td>
+<td>键以某种排序规则排序的键值对集合，以红黑树作为其结构，非线程安全</td>
+<td>否</td>
+<td></td>
+</tr>
+<tr>
+<td>EnumMap</td>
+<td>键为枚举的Map，在构造时，需要传入一个枚举类的类</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Properties</td>
+<td>通常用于读取Properties文件</td>
+<td>是</td>
+<td></td>
+</tr>
+<tr>
+<td>IdentityHashMap</td>
+<td>键值对集合，但是在其比较时，不是通过 <code>equals</code> 方法，而是直接通过 <code>==</code>，则意味着，是通过比较其内存地址。</td>
+<td>否</td>
+<td></td>
+</tr>
+<tr>
+<td>WeakHashMap</td>
+<td>种改进版的HashMap，它对key实现“弱引用”，如果一个key不再被外部所引用，那么该key可以被GC回收</td>
+<td>否</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h4 id="6-1_HashMap是如何实现？">6.1 HashMap是如何实现？</h4><p>借用网上的一张图:</p>
+  <center><img src="/pics/Java-HashMap.jpg" alt="HashMap"></center>
+
+<p>其主要借助数组和链表进行实现，首先根据哈希值，确定在数组中的索引，再创建链表，解决哈希值冲突的问题。链表上的比较主要借助于<code>equals</code>方法。</p>
+<h5 id="6-1-1_HashMap是如何扩容的？">6.1.1 HashMap是如何扩容的？</h5><p>其初始化容量为 <code>16</code>, 负载因子为 <code>0.75</code>，其扩容函数 (<code>resize</code>)如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">if (oldCap &gt; 0) &#123;</span><br><span class="line">    if (oldCap &gt;= MAXIMUM_CAPACITY) &#123;</span><br><span class="line">        threshold = Integer.MAX_VALUE;</span><br><span class="line">        return oldTab;</span><br><span class="line">    &#125;</span><br><span class="line">    else if ((newCap = oldCap &lt;&lt; 1) &lt; MAXIMUM_CAPACITY &amp;&amp;</span><br><span class="line">             oldCap &gt;= DEFAULT_INITIAL_CAPACITY)</span><br><span class="line">        newThr = oldThr &lt;&lt; 1; // double threshold</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其容量扩大为原来的<strong>2</strong>倍。</p>
+<h5 id="6-1-2_如何存储键为_null_的键值对？">6.1.2 如何存储键为 <code>null</code> 的键值对？</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">static final int hash(Object key) &#123;</span><br><span class="line">    int h;</span><br><span class="line">    return (key == null) ? 0 : (h = key.hashCode()) ^ (h &gt;&gt;&gt; 16);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面这段代码，用于生成一个 <code>key</code> 的 <code>hashCode</code> ，可以发现如果 <code>Key</code> 为 <code>null</code>，则为 <code>0</code>，则会存在 <code>table</code> 中的第一个数据上。</p>
+<h4 id="6-2_TreeMap的实现？">6.2 TreeMap的实现？</h4><p>基于红黑树进行实现</p>
+<h4 id="6-3_LinkedHashMap的实现？">6.3 LinkedHashMap的实现？</h4><p>继承自 <code>HashMap</code>，功能上与<code>HashMap</code>完全一样，但是<code>LinkedHashMap</code>能够保证遍历的顺序与插入时的顺序一致。其内部维护了一下双向链表，在<code>Entry</code>中保留了<code>before</code>和<code>after</code>的引用。注意在<code>LinkedHashMap</code>有一个<code>accessOrder</code>，当为<code>true</code>时，整个链表按照使用的顺序进行排序; 当为<code>false</code>时，整个链表按插入的顺序进行排序，这也是默认的顺序。可以结合<code>removeEldestEntry</code>实现一个<code>LRU</code>缓存。</p>
+<h4 id="6-4_WeakHashMap的实现？">6.4  WeakHashMap的实现？</h4><p>通过<code>WeakReference</code>和<code>ReferenceQueue</code>，实现键的弱引用。</p>
+<h4 id="6-5_HashMap和Hashtable的区别？">6.5 HashMap和Hashtable的区别？</h4><ul>
+<li><p>共同点：<br> 从存储结构和实现来讲基本上都是相同的，都是实现Map接口</p>
+</li>
+<li><p>区别：</p>
+<ul>
+<li>同步性<br> HashMap是非同步的<br> Hashtable是同步的</li>
+<li>是否允许为null<ul>
+<li>HashMap允许为null</li>
+<li>Hashtable不允许为null</li>
+</ul>
+</li>
+<li>contains方法<ul>
+<li>Hashtable有contains方法</li>
+<li>HashMap把Hashtable的contains方法去掉了，改成了containsValue和containsKey</li>
+</ul>
+</li>
+<li>继承不同：<ul>
+<li>HashMap&lt;K,V&gt; extends AbstractMap&lt;K,V&gt;</li>
+<li>public class Hashtable&lt;K,V&gt; extends Dictionary&lt;K,V&gt;</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="七、集合的_fail-fast_机制">七、集合的 <code>fail-fast</code> 机制</h3><p><code>fail-fast</code> 是指当通过 <code>Iterator</code> 去遍历集合时，如果存在另一个线程同时去修改该集合，将会抛出一个 <code>ConcurrentModificationException</code> 的异常，这种行为被称为 <code>fail-fast</code>。以下用 <code>ArrayList</code> 举例，可以发现其迭代器如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">private class Itr implements Iterator&lt;E&gt; &#123;</span><br><span class="line">    int cursor;       // index of next element to return</span><br><span class="line">    int lastRet = -1; // index of last element returned; -1 if no such</span><br><span class="line">    int expectedModCount = modCount;</span><br><span class="line">    public boolean hasNext() &#123;</span><br><span class="line">        return cursor != size;</span><br><span class="line">    &#125;</span><br><span class="line">    public E next() &#123;</span><br><span class="line">        checkForComodification();</span><br><span class="line">        // ...</span><br><span class="line">    &#125;</span><br><span class="line">    public void remove() &#123;</span><br><span class="line">        if (lastRet &lt; 0)</span><br><span class="line">            throw new IllegalStateException();</span><br><span class="line">        checkForComodification();</span><br><span class="line">        // ..</span><br><span class="line">    &#125;</span><br><span class="line">    @Override</span><br><span class="line">    public void forEachRemaining(Consumer&lt;? super E&gt; consumer) &#123;</span><br><span class="line">        // ..</span><br><span class="line">        checkForComodification();</span><br><span class="line">    &#125;</span><br><span class="line">    final void checkForComodification() &#123;</span><br><span class="line">        if (modCount != expectedModCount)</span><br><span class="line">            throw new ConcurrentModificationException();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到在调用 <code>next()</code> 时，会调用 <code>checkForComodification()</code> 函数，该函数仅仅用于比较 <code>expectedModCount</code> 与 <code>modCount</code>是否相等。<code>modCount</code> 是 <code>ArrayList</code> 中的一个变量，当创建 <code>Itr</code> 这个迭代器时，将会为 <code>expectedModCount</code> 赋值。也就是说当 <code>modCount</code> 改变时，将会触发 <code>fail-fast</code> 机制。那什么地方会修改 <code>modCount</code> 呢？在 <code>ArrayList</code> 有如下的代码:</p>
+<p>其增加方法:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public boolean add(E e) &#123;</span><br><span class="line">    ensureCapacityInternal(size + 1);  // Increments modCount!!</span><br><span class="line"> 	//..</span><br><span class="line">&#125;</span><br><span class="line">private void ensureCapacityInternal(int minCapacity) &#123;</span><br><span class="line">    // ..</span><br><span class="line">    ensureExplicitCapacity(minCapacity);</span><br><span class="line">&#125;</span><br><span class="line">private void ensureExplicitCapacity(int minCapacity) &#123;</span><br><span class="line">    modCount++;</span><br><span class="line">	// ..</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>其删除方法:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public E remove(int index) &#123;</span><br><span class="line">    modCount++;</span><br><span class="line">    // ..</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private void fastRemove(int index) &#123;</span><br><span class="line">    modCount++;</span><br><span class="line"> 	// ..</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其 <code>clear</code> 方法:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public void clear() &#123;</span><br><span class="line">    modCount++;</span><br><span class="line">	// ..</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到其增加、删除的操作，都会影响 <code>modCount</code>，即所有的影响集合大小的操作，都将使 <code>modCount</code> 改变。</p>
+<h3 id="八、集合的_fail-safe_机制">八、集合的 <code>fail-safe</code> 机制</h3><p><code>fail-safe</code>与<code>fail-fast</code>相对应，<code>fail-fast</code>用于避免用户并发修改数据，而<code>fail-safe</code>则是为保证让用户能够并发地访问及修改数据，当然如果可以并发修改数据，也就不会抛出<code>ConcurrentModificationException</code>。以下就简单地分析一下并发集合<code>ConcurrentHashMap</code>是如何处理的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">// P1</span><br><span class="line">static final class EntryIterator&lt;K,V&gt; extends BaseIterator&lt;K,V&gt;</span><br><span class="line">        implements Iterator&lt;Map.Entry&lt;K,V&gt;&gt; &#123;</span><br><span class="line">        </span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    public final Map.Entry&lt;K,V&gt; next() &#123;</span><br><span class="line">        Node&lt;K,V&gt; p;</span><br><span class="line">        if ((p = next) == null)</span><br><span class="line">            throw new NoSuchElementException();</span><br><span class="line">        K k = p.key;</span><br><span class="line">        V v = p.val;</span><br><span class="line">        lastReturned = p;</span><br><span class="line">        advance();</span><br><span class="line">        return new MapEntry&lt;K,V&gt;(k, v, map);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// P2</span><br><span class="line">static class BaseIterator&lt;K,V&gt; extends Traverser&lt;K,V&gt; &#123;</span><br><span class="line">        final ConcurrentHashMap&lt;K,V&gt; map;</span><br><span class="line">        </span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    public final void remove() &#123;</span><br><span class="line">        Node&lt;K,V&gt; p;</span><br><span class="line">        if ((p = lastReturned) == null)</span><br><span class="line">            throw new IllegalStateException();</span><br><span class="line">        lastReturned = null;</span><br><span class="line">        map.replaceNode(p.key, null, null);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在<code>fail-fast</code>中，主要关注的其<code>iterator</code>，而<code>iterator</code>的关键点在于其<code>remove</code>方法的处理方式。在<code>ConcurrentHashMap</code>中<code>iterator</code>的本质就是<code>EntryIterator</code>对象，通过代码可以看到，其删除操作，并不是一个真正的删除，而是临时将对象的值设置为null，所以<code>ConcurrentHashMap</code>不能存值为NULL的对象。</p>
+
+    </div>
+    <footer>
+        
+	
+	<div class="categories">
+	<a href="/categories/Java/">Java</a>
+	</div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Java/">Java</a>, <a href="/tags/Collection/">Collection</a>
+  </div>
+
+        <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+ <nav id="pagination" >
+    
+    <a href="/Network/Network/DNS/" class="alignleft prev" title="DNS">DNS</a>
+    
+    
+    <a href="/Life/Life/大脑的思考程序/" class="alignright next" title="高效思考的步骤">高效思考的步骤</a>
+    
+    <div class="clearfix"></div>
+</nav>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="widget author-meta">
+    <div class="author-avatar">
+        <img src="/images/author.jpg">
+    </div>
+    <div class="author-name">coolwcan</div>
+    <div class="author-work">Java Developer</div>
+    <div class="author-location">
+        <i class="icon-location"></i>
+        <span>四川成都</span>
+    </div>
+    <div class="social-font">
+        
+        <a href="https://github.com/coolwcan" target="_blank" title="github"></a>
+        
+        
+        <a href="mailto:coolwcan@163.com" target="_blank" class="icon-email" title="email"></a>
+        
+    </div>
+</div>
+
+
+  <div class="widget search" style="margin-bottom: 30px">
+    <input id="local-search-input" class="search" type="search" placeholder="搜索">
+    <div id="local-search-result" style="display: none;" class="entry"></div>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    
+        <li><a href="/categories/Algorithm/">Algorithm</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/C-C/">C/C++</a><small>21</small></li>
+    
+  
+    
+        <li><a href="/categories/Coding/">Coding</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Computer/">Computer</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Database/">Database</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/DevOps/">DevOps</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Distributed/">Distributed</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Erlang/">Erlang</a><small>7</small></li>
+    
+  
+    
+        <li><a href="/categories/J2ee/">J2ee</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Java/">Java</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Life/">Life</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Network/">Network</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/Security/">Security</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/Shiro/">Shiro</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Tools/">Tools</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Web/">Web</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Zookeeper/">Zookeeper</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/配置中心/">配置中心</a><small>1</small></li>
+    
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/ACK/" style="font-size: 10px;">ACK</a> <a href="/tags/Archlinux/" style="font-size: 10px;">Archlinux</a> <a href="/tags/Arrays/" style="font-size: 10px;">Arrays</a> <a href="/tags/Base64/" style="font-size: 10px;">Base64</a> <a href="/tags/C-C/" style="font-size: 20px;">C/C++</a> <a href="/tags/CRC/" style="font-size: 10px;">CRC</a> <a href="/tags/Cache/" style="font-size: 10px;">Cache</a> <a href="/tags/Centos/" style="font-size: 10px;">Centos</a> <a href="/tags/Chrome/" style="font-size: 10px;">Chrome</a> <a href="/tags/Class/" style="font-size: 10px;">Class</a> <a href="/tags/Coding/" style="font-size: 10px;">Coding</a> <a href="/tags/Collection/" style="font-size: 11.43px;">Collection</a> <a href="/tags/Compile/" style="font-size: 10px;">Compile</a> <a href="/tags/Compiler/" style="font-size: 10px;">Compiler</a> <a href="/tags/Computer/" style="font-size: 11.43px;">Computer</a> <a href="/tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="/tags/DDos/" style="font-size: 10px;">DDos</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Database/" style="font-size: 10px;">Database</a> <a href="/tags/Deployment/" style="font-size: 10px;">Deployment</a> <a href="/tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="/tags/Distributed/" style="font-size: 10px;">Distributed</a> <a href="/tags/Efficiency/" style="font-size: 10px;">Efficiency</a> <a href="/tags/Erlang/" style="font-size: 15.71px;">Erlang</a> <a href="/tags/GC/" style="font-size: 10px;">GC</a> <a href="/tags/Generic/" style="font-size: 10px;">Generic</a> <a href="/tags/Git/" style="font-size: 10px;">Git</a> <a href="/tags/Intellij-Idea/" style="font-size: 10px;">Intellij Idea</a> <a href="/tags/J2ee/" style="font-size: 17.14px;">J2ee</a> <a href="/tags/JVM/" style="font-size: 10px;">JVM</a> <a href="/tags/Java/" style="font-size: 17.14px;">Java</a> <a href="/tags/JavaBean/" style="font-size: 10px;">JavaBean</a> <a href="/tags/Life/" style="font-size: 10px;">Life</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Memorty/" style="font-size: 10px;">Memorty</a> <a href="/tags/Memory/" style="font-size: 15.71px;">Memory</a> <a href="/tags/MySQL/" style="font-size: 10px;">MySQL</a> <a href="/tags/NAT/" style="font-size: 10px;">NAT</a> <a href="/tags/Network/" style="font-size: 14.29px;">Network</a> <a href="/tags/Object-oriented/" style="font-size: 10px;">Object-oriented</a> <a href="/tags/Optimize/" style="font-size: 11.43px;">Optimize</a> <a href="/tags/REST/" style="font-size: 10px;">REST</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/Release/" style="font-size: 10px;">Release</a> <a href="/tags/SEQ/" style="font-size: 10px;">SEQ</a> <a href="/tags/SPI/" style="font-size: 10px;">SPI</a> <a href="/tags/SSL-TLS/" style="font-size: 11.43px;">SSL/TLS</a> <a href="/tags/SSO/" style="font-size: 10px;">SSO</a> <a href="/tags/Security/" style="font-size: 12.86px;">Security</a> <a href="/tags/Session/" style="font-size: 11.43px;">Session</a> <a href="/tags/Shell/" style="font-size: 10px;">Shell</a> <a href="/tags/Shiro/" style="font-size: 15.71px;">Shiro</a> <a href="/tags/Sort/" style="font-size: 10px;">Sort</a> <a href="/tags/Source-codes-analysis/" style="font-size: 17.14px;">Source codes analysis</a> <a href="/tags/Spring-MVC/" style="font-size: 11.43px;">Spring MVC</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/Test/" style="font-size: 10px;">Test</a> <a href="/tags/Tomcat/" style="font-size: 10px;">Tomcat</a> <a href="/tags/Tools/" style="font-size: 18.57px;">Tools</a> <a href="/tags/Ubuntu/" style="font-size: 10px;">Ubuntu</a> <a href="/tags/Vim/" style="font-size: 10px;">Vim</a> <a href="/tags/Xss/" style="font-size: 10px;">Xss</a> <a href="/tags/Zookeeper/" style="font-size: 12.86px;">Zookeeper</a> <a href="/tags/ets/" style="font-size: 10px;">ets</a> <a href="/tags/热更新/" style="font-size: 10px;">热更新</a> <a href="/tags/高并发/" style="font-size: 10px;">高并发</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.bootcss.com/mathjax/2.7.4/latest.js">
+</script>
+</body>
+</html>
