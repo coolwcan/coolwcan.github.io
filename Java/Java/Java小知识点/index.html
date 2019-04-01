@@ -1,0 +1,511 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Java小知识点 | coolwcan</title>
+  <meta name="author" content="coolwcan">
+  
+  <meta name="description" content="1. 术语
+JPAJava Persistence API， Java持久化API
+JSRJava Specification Requests， Java 规范提案
+JCPJava Community Process
+EJB一个框架，将执行任务的类，放在服务器上
+RMIRemote Method ">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Java小知识点"/>
+  <meta property="og:site_name" content="coolwcan"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="//images/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="coolwcan" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//libs.baidu.com/jquery/1.8.0/jquery.min.js"></script>
+  <script>
+	$(function() {
+		$(".search").keydown(function(e){
+			if (e.keyCode==13) {
+                // var path = "/search.xml";
+                // searchFunc(path, 'local-search-input', 'local-search-result');
+			}
+		});
+	})
+
+    'use strict';
+	var search_id = 'local-search-input'
+    var content_id = 'local-search-result'
+    $.ajax({
+        url: '/search.xml',
+        dataType: "xml",
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                $resultContent.style.display = 'none'
+                var str='<ul class=\"entry search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length <= 0) {
+                    return;
+                }
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title !== '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            if( index_title < 0){
+                                isMatch = false;
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        str += "<li><a href='"+ data_url +"' class='search-result-title' target='_blank'>"+ "> " + data_title +"</a>";
+                    }
+                })
+                $resultContent.innerHTML = str;
+                if (str && str.length > 0) {
+                    $resultContent.style.display = 'block'
+                }
+            })
+        }
+    })
+
+
+  </script>
+</head>
+
+
+<body>
+  <header><div>
+    <nav class="animated">
+        <ul>
+            
+            <li><a href="/">Home</a></li>
+            
+            <li><a href="/about">About</a></li>
+            
+            <li><a href="/atom.xml">RSS</a></li>
+        </ul>
+    </nav>
+</div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header class="article-info clearfix">
+	<h1 itemprop="name">
+		Java小知识点
+	</h1>
+</header>
+    <div class="entry">
+        <h3 id="1-_术语">1. 术语</h3><ul>
+<li>JPA<br><code>Java Persistence API</code>， Java持久化API</li>
+<li>JSR<br><code>Java Specification Requests</code>， Java 规范提案</li>
+<li>JCP<br><code>Java Community Process</code></li>
+<li>EJB<br>一个框架，将执行任务的类，放在服务器上</li>
+<li>RMI<br><code>Remote Method Invocation</code>，远程方法调用</li>
+<li>JNDI<br><code>Java Naming and Directory Interface</code>, Java命名和目录接口</li>
+</ul>
+<h3 id="2-_优化建议">2. 优化建议</h3><ul>
+<li>在对大字符串进行 <code>spilt</code> 操作时，使用 <code>StringTokenizer</code> 的性能会更好</li>
+<li>短路表达式，能提高效率</li>
+<li>多使用 <code>native</code> 函数，如 <code>System.arraycopy</code></li>
+</ul>
+<h3 id="3-_String-format(format,_args)方法">3. String.format(format, args)方法</h3><p><code>%d</code> 包括了 <code>int, long, byte</code></p>
+<h3 id="4-_String">4. String</h3><p>String 是不可变的，赋值会重新生成一个String对象。</p>
+<p>1.直接定义字符串变量的时候赋值，如果表达式右边只有字符串常量，那么就是把变量存放在常量池里面。<br>2.new出来的字符串是存放在堆里<br>3.对字符串进行拼接操作，也就是做”+”运算的时候，分2中情况：</p>
+<pre><code><span class="number">1.</span> 右边是纯字符串常量，那么存放在栈里面。
+<span class="number">2.</span> 表达式右边如果存在字符串引用，也就是字符串对象的句柄，那么就存放在堆里面。
+</code></pre><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">String str1 = &quot;aaa&quot;;</span><br><span class="line">String str2 = &quot;bbb&quot;;</span><br><span class="line">String str3 = &quot;aaabbb&quot;;</span><br><span class="line">String str4 = str1 + str2;</span><br><span class="line">String str5 = &quot;aaa&quot; + &quot;bbb&quot;;</span><br><span class="line">System.out.println(str3 == str4);          // false， 一个在常量池，另一个在栈上</span><br><span class="line">System.out.println(str3 == str4.intern()); // true，intern方法会将值放入常量池。两个字符串相加，会被转换成StringBuilder的append操作</span><br><span class="line">System.out.println(str3 == str5);          // true，字符串相加的时候，都是静态字符串的结果会添加到字符串池</span><br></pre></td></tr></table></figure>
+<h3 id="5-_在引用传递中，只有对引用对象内部的修改才会影响原对象，如果直接将引用修改了，则对原对象没有影响。">5. 在引用传递中，只有对引用对象内部的修改才会影响原对象，如果直接将引用修改了，则对原对象没有影响。</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public class Test &#123;</span><br><span class="line"></span><br><span class="line">    public static void doSomething(Integer var) &#123;</span><br><span class="line">        var = new Integer(2);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        Integer var1 = new Integer(1);</span><br><span class="line">        Integer var2 = var1;</span><br><span class="line">        doSomething(var2);</span><br><span class="line">        System.out.println(var1 == var2);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>将输出 <code>true</code></p>
+<h3 id="6-_带符号右移与无符号右移的区别">6. 带符号右移与无符号右移的区别</h3><ol>
+<li><code>&gt;&gt;</code> , 有符号右移，正数，高位补0，负数，高位补1</li>
+<li><code>&gt;&gt;&gt;</code> , 无符号右移，高位始终补0</li>
+</ol>
+<h3 id="7-_重载条件">7. 重载条件</h3><ol>
+<li>参数的类型不同</li>
+<li>参数的顺序不同</li>
+<li>参数的个数不同</li>
+</ol>
+<h3 id="8-_Thread类中的run方法与start方法的区别">8. Thread类中的run方法与start方法的区别</h3><ol>
+<li>start, 才会真正重新重新开启一个线程</li>
+<li>run, 仅仅是执行runnble中的一个方法，并不会重新打开一个线程</li>
+</ol>
+<h3 id="9-_Java命名规范">9. Java命名规范</h3><ol>
+<li>包的命名<br>全部小写, 由域名定义</li>
+<li>类的命名<br>单词首字母大写</li>
+<li>方法命名<br>首字母小写, 字母开头大写</li>
+<li>常量命名<br>全部大写, 加下划线</li>
+</ol>
+<h3 id="10-_Java集合类中线程安全与不是线程安全的对象">10. Java集合类中线程安全与不是线程安全的对象</h3><p>前面是非线程安全，后面的是线程安全</p>
+<ol>
+<li>StringBuilder 和 StringBuffer</li>
+<li>HashMap 和 HashTable</li>
+<li>ArrayList 和 Vector</li>
+</ol>
+<h3 id="11-_Java中的参数类型">11. Java中的参数类型</h3><ol>
+<li>继承关系</li>
+</ol>
+&lt;center<img src="./pic/java-parameter-type.jpg" alt="">
+
+<ol start="2">
+<li><p>类型说明</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">1. Type              : java语言中所有类型的公共父接口</span><br><span class="line">2. GenericArrayType  : 表示一种元素类型是参数化类型或者类型变量的数组类型，如: void method(ArrayList[] al)&#123;…&#125;</span><br><span class="line">3. ParameterizedType : 表示一种参数化的类型，比如Collection</span><br><span class="line">4. TypeVariable      : 是各种类型变量的公共父接口</span><br><span class="line">5. WildcardType      : 代表一种通配符类型表达式</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>方法</p>
+<ul>
+<li><code>Type[] getActualTypeArguments()</code><br>这个函数仅仅是去掉最外层的&lt;&gt;后剩下的内容，就是返回值</li>
+<li><code>Type getGenericComponentType()</code><br>这个方法仅仅脱去最右边的[]之后剩下的内容就作为这个方法的返回值</li>
+</ul>
+</li>
+</ol>
+<h3 id="12-_抽象类与接口的区别">12. 抽象类与接口的区别</h3><ol>
+<li>语法上的区别<ol>
+<li>抽象类里可以有构造方法，而接口内不能有构造方法。</li>
+<li>抽象类中可以有普通成员变量，而接口中不能有普通成员变量。</li>
+<li>抽象类中可以包含非抽象的普通方法，而接口中所有的方法必须是抽象的，不能有非抽象的普通方法</li>
+<li>抽象类中的抽象方法的访问类型可以是public ，protected和默认类型，但接口中的抽象方法只能是<br>public类型的，并且默认即为public abstract类型。</li>
+<li>抽象类中可以包含静态方法，接口内不能包含静态方法。</li>
+<li>抽象类和接口中都可以包含静态成员变量，抽象类中的静态成员变量的访问类型可以任意，但接口中定<br>义的变量只能是public  static类型，并且默认为public static final类型。</li>
+<li>一个类可以实现多个接口，但只能继承一个抽象类。</li>
+</ol>
+</li>
+<li>使用上的区别<ol>
+<li>接口更多的是在系统架构设计方法发挥作用，主要用于定义模块之间的通信契约</li>
+<li>抽象类在代码实现方面发挥作用</li>
+</ol>
+</li>
+</ol>
+<h3 id="13-_Java中的hashCode与equals">13. Java中的hashCode与equals</h3><p>在 <code>Object</code> 默认存在两个函数，<code>hashCode</code> 和 <code>equals</code>，这两个方法主要用于集合中比较两个对象是否相等，默认是比较对象的内存地址。<code>hashCode</code> 函数会根据当前对象的属性生成特定的哈希值。</p>
+<ol>
+<li>集合中如何比较两个对象？<ol>
+<li>先比较HashCode值</li>
+<li>如果HashCode相等，再调用equals方法，来判断</li>
+</ol>
+</li>
+<li>为什么用HashCode，不直接用equals来比较？<br> 因为在集合中会存在一个table，来记录所有对象的HashCode，直接用HashCode来进行比较效率比较高，而使用equals比较，比较的操作比较多，较耗时</li>
+</ol>
+<h3 id="14-_ConcurrentHashMap与HashTable的区别">14. ConcurrentHashMap与HashTable的区别</h3><ul>
+<li>并发控制的粒度不同。ConcurrentHashMap，对读操作，完全并发，对写操作，并发控制的粒度很细，支持行级锁。而HashTable，则是全表锁。</li>
+<li>迭代器的一致性不同。ConcurrentHashMap是弱一致，而HashTable是强一致。ConcurrentHashMap的迭代弱一致，即在迭代过程，修改数据时，不同于HashTable的抛出异常的行为，它不会直接修改老数据，而是新创建一个数据，当遍历完成后，才将指针指向新的数据。这样即能够保证数据的正常遍历，又能够提高并发效率。但是HashTable具有强一致性，这种行为常被称为<code>fail-fast</code>(快速失败)迭代器，即当在遍历过程中，数据被修改，会产生异常。</li>
+</ul>
+<h3 id="15-_负载因子">15. 负载因子</h3><p>在HashMap中存在着一个称为“负载因子”的浮点数，“负载因子”表示的是，当达到当前容量的某一个比例时，就会扩容，该扩容的过程，被称为 <code>rehashing</code>。扩容后的容量，是当前容量的2倍。</p>
+<h3 id="16-_内部类">16. 内部类</h3><p>内部类可以随意使用外部类的成员变量（包括私有）而不用生成外部类的对象，这是内部类的惟一优点。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. 静态内部类 : 只能访问外部的静态类变量</span><br><span class="line">2. 私有内部类 :	只能由外部类控制，不能在外部创建</span><br><span class="line">3. 公共内部类 : 都可以访问</span><br><span class="line">4. 方法内部类 : 只能在方法内访问，方法内部类的方法形参必须使用 `final` 定义</span><br></pre></td></tr></table></figure>
+<h3 id="17-_super_与_extends_的区别">17. super 与 extends 的区别</h3><p><code>super</code> 向下造型，指明下界，表明所有父类及本身，那么此时可以向集合中添加所有子类对象，从我的角度去看，此时如果 <code>List&lt;? super A &gt;</code>就相当于 <code>List&lt;Object&gt;</code>，此时可以向里面添加任意的对象，但是取出来的对象也是 <code>Object</code> 需要强制转换；<code>extends</code>，向上选型，指明上界，表明所有子类及本身，则此时可以从集合中获取对象。在 <code>Java</code> 中，<code>List&lt;Number&gt;</code> 可以存储 <code>Integer</code> 或者 <code>Double</code> 对象，但是 <code>List&lt;Integer&gt;</code> 却不能存储 <code>Double</code> 对象，而 <code>List&lt;? extends Number&gt;</code> 表明所有继承自 <code>Number</code> 的子类及 <code>Number</code> 类，此时向 <code>List&lt;? extends Number&gt;</code> 添加数据，就会引起类型安全的问题，因为不能确定具体是那个类型啊。在Java中有一个 <code>PECS</code> 原则，即如果是生产者(即只能从集合里取数据，而不能向集合添加数据)，则使用 <code>extends</code>，如果是消费者(即只能向集合添加数据，而不能从里面取数据)，则使用 <code>super</code>; 其根本原因是因为Java在泛型方面不支持协变与逆变。</p>
+<h3 id="18-_线程池">18. 线程池</h3><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>newCachedThreadPool</td>
+<td>创建一个可缓存线程池，如果线程池长度超过处理需要，可灵活回收空闲线程，若无可回收，则新建线程。</td>
+</tr>
+<tr>
+<td>newFixedThreadPool</td>
+<td>创建一个定长线程池，可控制线程最大并发数，超出的线程会在队列中等待。</td>
+</tr>
+<tr>
+<td>newScheduledThreadPool</td>
+<td>创建一个定长线程池，支持定时及周期性任务执行。</td>
+</tr>
+<tr>
+<td>newSingleThreadExecutor</td>
+<td>创建一个单线程的线程池，保证所有任务按照指定顺序执行。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="19-_对象锁与类锁">19. 对象锁与类锁</h3><p>都是针对 <code>synchronized</code> 关键字而言的，对象锁，指以一个类的实例，作为互斥的对象；而类锁，是以类所对应的类对象作为互斥的对象，例<code>XXX.class</code></p>
+<h3 id="20-_java_与_javax_的区别">20. java 与 javax 的区别</h3><p><code>java</code> 和 <code>javax</code> 都是 <code>Java</code> 的 <code>API(Application Programming Interface)</code> 包, <code>java</code> 是核心包，<code>javax</code> 的 <code>x</code> 是 <code>extension</code> 的意思,也就是扩展包</p>
+<h3 id="21-_Finalize方法">21. Finalize方法</h3><ol>
+<li>finalize 方法，是针对 <code>GC</code> 的一个补充。</li>
+<li>finalize 方法只会执行一次</li>
+<li>finalize 函数的执行过程如下:<ul>
+<li>当对象不可达时，没有重写了finalize方法，直接将其回收。</li>
+<li>当对象不可达时，重写了finalize方法，则将其放入到 <code>F-Queue</code> 队列(由低优先级线程执行该队列中的finalize方法)</li>
+<li>当执行finalize方法完后，再次判断对象是否可达，不可达，则进行回收，否则对象“复活”</li>
+</ul>
+</li>
+<li><code>gc</code> 过程的状态组<ul>
+<li>终结状态<br><code>F = {unreachable, finalizable, finalized}</code></li>
+<li>可达状态空间<br><code>R = {reachable, finalizer-reachable, unfinalized}</code><br>各状态含义:  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">- unfinalized</span><br><span class="line">  新建对象会先进入此状态</span><br><span class="line">- finalizable</span><br><span class="line">  当对象不可达，重写finalize方法时，并且已经放入到F-Queue中，等待finaize方法被执行</span><br><span class="line">- finalized</span><br><span class="line">  表示在F-Queue队列中对该对象执行过finalize方法</span><br><span class="line">- reachable</span><br><span class="line">  表示GC Roots引用可达</span><br><span class="line">- finalizer-reachable(f-reachable)</span><br><span class="line">  表示不是reachable，但可通过某个finalizable对象可达。即在finalize函数中，引用到某一个对象，此时该对象就为这个状态</span><br><span class="line">- unreachable</span><br><span class="line">  对象不可达，等待被GC</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ol>
+<h3 id="22-_引起OOM的几种情况">22. 引起OOM的几种情况</h3><ul>
+<li>堆溢出<br><code>Java.lang.OutOfMemoryError: Java heap space</code>，这种是由于 <code>java</code> 堆内存不够，一个原因是真不够，另一个原因是程序中有死循环； 可以通过调整JVM的最大堆（-Xmx）；</li>
+<li>栈溢出<br><code>java.lang.StackOverflowError</code>，需要查看是否存在深度递归，或者通过调整JVM的 <code>-Xss</code> 调整堆栈</li>
+<li>永久区溢出<br><code>java.lang.OutOfMemoryError: PermGen space</code>，可能是由于动态代理产生了大量的 <code>class</code>，或者超过了设置的最大的永久空间</li>
+<li>GC溢出<br><code>java.lang.OutOfMemoryError: GC overhead limit exceeded</code>，是由于JVM在GC时，对象过多，导致内存溢出，建议调整GC的策略。</li>
+<li>创建线程的溢出<br><code>java.lang.OutOfMemoryError: unable to create new native thread</code>，超过了最大的创建线程的个数。</li>
+<li>创建大数组的溢出<br><code>java.lang.OutOfMemoryError: Requested array size exceeds VM limit</code>，分配的堆超过了堆的最大限制</li>
+<li>swap 时的溢出<br><code>java.lang.OutOfMemoryError: request &lt;size&gt; bytes for &lt;reason&gt;. Out of swap space?</code>，是由于从native堆中分配内存失败，并且堆内存可能接近耗尽。可能是交换区的设置太小，或者存在另一个线程正在消耗内存。</li>
+<li>读数据时的溢出<br><code>java.lang.OutOfMemoryErr java.io.FileInputStream.readBytes(Native Method)</code></li>
+</ul>
+<h3 id="23-_isInstance，instanceof和isAssignableFrom的区别">23. isInstance，instanceof和isAssignableFrom的区别</h3><ul>
+<li>instanceof<br>运算符，<code>a instanceof A</code>, <code>a</code> 是一个实例对象，而<code>A</code>是一个类，用于检查对象 <code>a</code> 是否是类 <code>A</code> 实例化。如果对象为null，则返回false。 eg: <code>obj instanceof String</code></li>
+<li>isInstantce<br>是Class类的方法，<code>A.isInstance(B)</code>, 判断类 <code>B</code> 是否是 <code>A</code> 的父类；eg: <code>Object.class.isInstance(String.class)</code></li>
+<li>isAssignableFrom<br>是Class类的方法，<code>A.isAssignableFrom(B)</code>, 用于判断 <code>B</code> 是否是 <code>A</code> 的子类； eg: <code>Object.class.isAssignableFrom(ArrayList.class)</code></li>
+</ul>
+<h3 id="24-_解决Hash冲突的方法">24. 解决Hash冲突的方法</h3><ol>
+<li>开放地址法<ol>
+<li>线性探测法<br>当发生冲突后，从该槽位置向后循环遍历hash表，直到找到表的下一个空槽</li>
+<li>伪随机探测<br>将线性探测的步长从常数改为随机数，即令 <code>hash = (hash + RN) % m</code>, <code>RN</code> 是一个随机数</li>
+</ol>
+</li>
+<li>拉链法<br>在冲突点上，建立链表</li>
+<li>再散列<br>当发生冲突时，使用第二个，第三个哈希函数计算地址，直至无冲突。</li>
+</ol>
+<h3 id="25-_Runnable和Callable有什么不同">25. Runnable和Callable有什么不同</h3><p>Runnable从JDK1.0开始就有了，Callable是在JDK1.5增加的。它们的主要区别是Callable的 call() 方法可以返回值和抛出异常</p>
+<h3 id="26-_什么是线程安全">26. 什么是线程安全</h3><p>多线程环境下，在访问共享资源时，能够保证其业务逻辑的正确性</p>
+<h3 id="27-_Java中如何停止线程">27. Java中如何停止线程</h3><p>JDK1.0中的stop(), resume(), suspend() 因为存在死锁威胁而被弃用了，一般是通过标记变量来控制线程的退出</p>
+<h3 id="28-_线程异常时会怎样？">28. 线程异常时会怎样？</h3><p>分成两类：可捕捉异常和非捕捉异常， 在Thread中如果存在可捕捉异常必须捕捉否则编译不过。而非捕捉异常，是通过 <code>Thread.UncaughtExceptionHandler</code> 进行处理的</p>
+<h3 id="25-_Map">25. Map</h3><table>
+<thead>
+<tr>
+<th>类</th>
+<th>Key</th>
+<th>Value</th>
+<th>Super</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hashtable</td>
+<td>不允许为null</td>
+<td>不允许为null</td>
+<td>Dictionary</td>
+<td>线程安全</td>
+</tr>
+<tr>
+<td>ConcurrentHashMap</td>
+<td>不允许为null</td>
+<td>不允许为null</td>
+<td>AbstractMap</td>
+<td>锁分段技术</td>
+</tr>
+<tr>
+<td>TreeMap</td>
+<td>不允许为null</td>
+<td>允许为null</td>
+<td>AbstractMap</td>
+<td>线程不安全</td>
+</tr>
+<tr>
+<td>TreeMap</td>
+<td>允许为null</td>
+<td>允许为null</td>
+<td>AbstractMap</td>
+<td>线程不安全</td>
+</tr>
+</tbody>
+</table>
+
+    </div>
+    <footer>
+        
+	
+	<div class="categories">
+	<a href="/categories/Java/">Java</a>
+	</div>
+
+        
+        <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+ <nav id="pagination" >
+    
+    <a href="/Computer/Computer/计算机小知识点/" class="alignleft prev" title="计算机小知识点">计算机小知识点</a>
+    
+    
+    <a href="/J2ee/J2ee/J2ee小知识点/" class="alignright next" title="J2ee小知识点">J2ee小知识点</a>
+    
+    <div class="clearfix"></div>
+</nav>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="widget author-meta">
+    <div class="author-avatar">
+        <img src="/images/author.jpg">
+    </div>
+    <div class="author-name">coolwcan</div>
+    <div class="author-work">Java Developer</div>
+    <div class="author-location">
+        <i class="icon-location"></i>
+        <span>四川成都</span>
+    </div>
+    <div class="social-font">
+        
+        <a href="https://github.com/coolwcan" target="_blank" title="github"></a>
+        
+        
+        <a href="mailto:coolwcan@163.com" target="_blank" class="icon-email" title="email"></a>
+        
+    </div>
+</div>
+
+
+  <div class="widget search" style="margin-bottom: 30px">
+    <input id="local-search-input" class="search" type="search" placeholder="搜索">
+    <div id="local-search-result" style="display: none;" class="entry"></div>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    
+        <li><a href="/categories/Algorithm/">Algorithm</a><small>4</small></li>
+    
+  
+    
+        <li><a href="/categories/C-C/">C/C++</a><small>21</small></li>
+    
+  
+    
+        <li><a href="/categories/Coding/">Coding</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Computer/">Computer</a><small>9</small></li>
+    
+  
+    
+        <li><a href="/categories/Database/">Database</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/DevOps/">DevOps</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Distributed/">Distributed</a><small>2</small></li>
+    
+  
+    
+        <li><a href="/categories/Erlang/">Erlang</a><small>7</small></li>
+    
+  
+    
+        <li><a href="/categories/J2ee/">J2ee</a><small>9</small></li>
+    
+  
+    
+        <li><a href="/categories/Java/">Java</a><small>19</small></li>
+    
+  
+    
+        <li><a href="/categories/Life/">Life</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Network/">Network</a><small>5</small></li>
+    
+  
+    
+        <li><a href="/categories/RabbitMQ/">RabbitMQ</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Security/">Security</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/Shiro/">Shiro</a><small>6</small></li>
+    
+  
+    
+        <li><a href="/categories/Tools/">Tools</a><small>8</small></li>
+    
+  
+    
+        <li><a href="/categories/Web/">Web</a><small>1</small></li>
+    
+  
+    
+        <li><a href="/categories/Zookeeper/">Zookeeper</a><small>3</small></li>
+    
+  
+    
+        <li><a href="/categories/配置中心/">配置中心</a><small>1</small></li>
+    
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/ACK/" style="font-size: 10px;">ACK</a> <a href="/tags/Annotation/" style="font-size: 10px;">Annotation</a> <a href="/tags/Archlinux/" style="font-size: 10px;">Archlinux</a> <a href="/tags/Arrays/" style="font-size: 10px;">Arrays</a> <a href="/tags/Base64/" style="font-size: 10px;">Base64</a> <a href="/tags/C-C/" style="font-size: 20px;">C/C++</a> <a href="/tags/CRC/" style="font-size: 10px;">CRC</a> <a href="/tags/Cache/" style="font-size: 10px;">Cache</a> <a href="/tags/Centos/" style="font-size: 10px;">Centos</a> <a href="/tags/Chrome/" style="font-size: 10px;">Chrome</a> <a href="/tags/Class/" style="font-size: 10px;">Class</a> <a href="/tags/Coding/" style="font-size: 10px;">Coding</a> <a href="/tags/Collection/" style="font-size: 11.25px;">Collection</a> <a href="/tags/Compile/" style="font-size: 10px;">Compile</a> <a href="/tags/Compiler/" style="font-size: 10px;">Compiler</a> <a href="/tags/Computer/" style="font-size: 12.5px;">Computer</a> <a href="/tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="/tags/DDos/" style="font-size: 10px;">DDos</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Database/" style="font-size: 10px;">Database</a> <a href="/tags/Deployment/" style="font-size: 10px;">Deployment</a> <a href="/tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="/tags/Distributed/" style="font-size: 10px;">Distributed</a> <a href="/tags/Efficiency/" style="font-size: 10px;">Efficiency</a> <a href="/tags/Enum/" style="font-size: 10px;">Enum</a> <a href="/tags/Erlang/" style="font-size: 15px;">Erlang</a> <a href="/tags/Exception/" style="font-size: 10px;">Exception</a> <a href="/tags/GC/" style="font-size: 10px;">GC</a> <a href="/tags/Generic/" style="font-size: 10px;">Generic</a> <a href="/tags/Git/" style="font-size: 10px;">Git</a> <a href="/tags/Intellij-Idea/" style="font-size: 10px;">Intellij Idea</a> <a href="/tags/J2ee/" style="font-size: 17.5px;">J2ee</a> <a href="/tags/JVM/" style="font-size: 10px;">JVM</a> <a href="/tags/Java/" style="font-size: 18.75px;">Java</a> <a href="/tags/JavaBean/" style="font-size: 10px;">JavaBean</a> <a href="/tags/Life/" style="font-size: 10px;">Life</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/MAC/" style="font-size: 10px;">MAC</a> <a href="/tags/Memorty/" style="font-size: 10px;">Memorty</a> <a href="/tags/Memory/" style="font-size: 15px;">Memory</a> <a href="/tags/MySQL/" style="font-size: 10px;">MySQL</a> <a href="/tags/NAT/" style="font-size: 10px;">NAT</a> <a href="/tags/Network/" style="font-size: 13.75px;">Network</a> <a href="/tags/Object-oriented/" style="font-size: 10px;">Object-oriented</a> <a href="/tags/Optimize/" style="font-size: 11.25px;">Optimize</a> <a href="/tags/REST/" style="font-size: 10px;">REST</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/Release/" style="font-size: 10px;">Release</a> <a href="/tags/SEQ/" style="font-size: 10px;">SEQ</a> <a href="/tags/SPI/" style="font-size: 10px;">SPI</a> <a href="/tags/SSL-TLS/" style="font-size: 11.25px;">SSL/TLS</a> <a href="/tags/SSO/" style="font-size: 10px;">SSO</a> <a href="/tags/Security/" style="font-size: 12.5px;">Security</a> <a href="/tags/Session/" style="font-size: 11.25px;">Session</a> <a href="/tags/Shell/" style="font-size: 10px;">Shell</a> <a href="/tags/Shiro/" style="font-size: 15px;">Shiro</a> <a href="/tags/Sort/" style="font-size: 10px;">Sort</a> <a href="/tags/Source-codes-analysis/" style="font-size: 16.25px;">Source codes analysis</a> <a href="/tags/Spring-MVC/" style="font-size: 11.25px;">Spring MVC</a> <a href="/tags/Stream/" style="font-size: 10px;">Stream</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/Test/" style="font-size: 10px;">Test</a> <a href="/tags/Tomcat/" style="font-size: 10px;">Tomcat</a> <a href="/tags/Tools/" style="font-size: 17.5px;">Tools</a> <a href="/tags/Ubuntu/" style="font-size: 10px;">Ubuntu</a> <a href="/tags/Vim/" style="font-size: 10px;">Vim</a> <a href="/tags/Xss/" style="font-size: 10px;">Xss</a> <a href="/tags/Zookeeper/" style="font-size: 12.5px;">Zookeeper</a> <a href="/tags/ets/" style="font-size: 10px;">ets</a> <a href="/tags/jdk8/" style="font-size: 10px;">jdk8</a> <a href="/tags/热更新/" style="font-size: 10px;">热更新</a> <a href="/tags/高并发/" style="font-size: 10px;">高并发</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.bootcss.com/mathjax/2.7.4/latest.js">
+</script>
+</body>
+</html>
