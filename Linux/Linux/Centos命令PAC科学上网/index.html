@@ -1,0 +1,311 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Centos命令PAC科学上网 | coolwcan</title>
+  <meta name="author" content="coolwcan">
+  
+  <meta name="description" content="科学上网的整个过程如下:
+1请求 ==&amp;gt; privoxy ==&amp;gt; ss ==&amp;gt; ss server
+请求通常是http和https，通过配置环境变量，将请求转发到privoxy，而privoxy利用PAC技术，选择将流量转到ss客户端或者直接请求，当请求走ss客户端时，请求会被转发">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Centos命令PAC科学上网"/>
+  <meta property="og:site_name" content="coolwcan"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="//images/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="coolwcan" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//libs.baidu.com/jquery/1.8.0/jquery.min.js"></script>
+  <script>
+	$(function() {
+		$(".search").keydown(function(e){
+			if (e.keyCode==13) {
+                // var path = "/search.xml";
+                // searchFunc(path, 'local-search-input', 'local-search-result');
+			}
+		});
+	})
+
+    'use strict';
+	var search_id = 'local-search-input'
+    var content_id = 'local-search-result'
+    $.ajax({
+        url: '/search.xml',
+        dataType: "xml",
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                $resultContent.style.display = 'none'
+                var str='<ul class=\"entry search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length <= 0) {
+                    return;
+                }
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title !== '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            if( index_title < 0){
+                                isMatch = false;
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        str += "<li><a href='"+ data_url +"' class='search-result-title' target='_blank'>"+ "> " + data_title +"</a>";
+                    }
+                })
+                $resultContent.innerHTML = str;
+                if (str && str.length > 0) {
+                    $resultContent.style.display = 'block'
+                }
+            })
+        }
+    })
+
+
+  </script>
+</head>
+
+
+<body>
+  <header><div>
+    <nav class="animated">
+        <ul>
+            
+            <li><a href="/">Home</a></li>
+            
+            <li><a href="/about">About</a></li>
+            
+            <li><a href="/atom.xml">RSS</a></li>
+        </ul>
+    </nav>
+</div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header class="article-info clearfix">
+	<h1 itemprop="name">
+		Centos命令PAC科学上网
+	</h1>
+</header>
+    <div class="entry">
+        <p>科学上网的整个过程如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">请求 ==&gt; privoxy ==&gt; ss ==&gt; ss server</span><br></pre></td></tr></table></figure>
+<p>请求通常是http和https，通过配置环境变量，将请求转发到privoxy，而privoxy利用PAC技术，选择将流量转到ss客户端或者直接请求，当请求走ss客户端时，请求会被转发到国外的ss服务器上，从国外的ss服务器上访问指定的url获取数据，再将数据还回。</p>
+<h3 id="安装">安装</h3><p>依赖于:</p>
+<ul>
+<li>python</li>
+<li>pip</li>
+<li>privoxy</li>
+<li>shadowsocks</li>
+</ul>
+<p>安装命令如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum -y install epel-release &amp;&amp; yum -y install python-pip &amp;&amp; pip install shadowsocks &amp;&amp; yum -y install privoxy</span><br></pre></td></tr></table></figure>
+<h3 id="配置">配置</h3><ul>
+<li><p>ss配置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">/etc/shadowsocks.json文件，没有则创建</span><br><span class="line">&#123;</span><br><span class="line">	  &quot;server&quot;:&quot;1.2.3.4&quot;,</span><br><span class="line">	  &quot;server_port&quot;:18081,</span><br><span class="line">	  &quot;local_address&quot;: &quot;0.0.0.0&quot;,</span><br><span class="line">	  &quot;local_port&quot;:1080,</span><br><span class="line">	  &quot;password&quot;:&quot;xxxx&quot;,</span><br><span class="line">	  &quot;method&quot;:&quot;aes-256-gcm&quot;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">## 配置说明：</span><br><span class="line">&#123;</span><br><span class="line">	  &quot;server&quot;: &quot;1.2.3.4&quot;,          # 服务器IP</span><br><span class="line">	  &quot;server_port&quot;: 18081,         # 服务器Port</span><br><span class="line">	  &quot;local_address&quot;: &quot;0.0.0.0&quot;,   # 本地监听IP</span><br><span class="line">	  &quot;local_port&quot;: 1080,           # 本地监听Port</span><br><span class="line">	  &quot;method&quot;: &quot;aes-256-gcm&quot;,      # 加密方式</span><br><span class="line">	  &quot;password&quot;: &quot;xxxx&quot;            # server密码</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>命令为： <code>sslocal -c /etc/shadowsocks.json -d start</code></p>
+</li>
+<li><p>privoxy配置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">curl -4sSkLO https://raw.github.com/zfl9/gfwlist2privoxy/master/gfwlist2privoxy</span><br><span class="line">bash gfwlist2privoxy &apos;127.0.0.1:1080&apos;</span><br><span class="line">mv -f gfwlist.action /etc/privoxy</span><br><span class="line">echo &apos;actionsfile gfwlist.action&apos; &gt;&gt; /etc/privoxy/config</span><br></pre></td></tr></table></figure>
+<p>命令如下: <code>systemctl start/restart/stop privoxy.service</code></p>
+</li>
+<li><p>代理配置（环境变量）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># privoxy 默认监听端口为 8118</span><br><span class="line">proxy=&quot;http://127.0.0.1:8118&quot;</span><br><span class="line">export http_proxy=$proxy</span><br><span class="line">export https_proxy=$proxy</span><br><span class="line">export no_proxy=&quot;localhost, 127.0.0.1, ::1&quot;</span><br><span class="line"></span><br><span class="line"># no_proxy 环境变量是指不经过 privoxy 代理的地址或域名</span><br><span class="line"># 只能填写具体的 IP、域名后缀，多个条目之间使用 &apos;,&apos; 逗号隔开</span><br><span class="line"># 比如: export no_proxy=&quot;localhost, 192.168.1.1, ip.cn, chinaz.com&quot;</span><br><span class="line"># 访问 localhost、192.168.1.1、ip.cn、*.ip.cn、chinaz.com、*.chinaz.com 将不使用代理</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="调试">调试</h3><ul>
+<li><p>以调试模式启动privoxy</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop privoxy.service</span><br><span class="line">privoxy &lt;(cat /etc/privoxy/config; echo -e &apos;debug 1\ndebug 2\ndebug 1024\ndebug 4096\ndebug 8192&apos;)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>通过日志判断PAC模式是否生效</p>
+<ul>
+<li>查看日志: <code>tail -f /var/log/privoxy/logfile</code></li>
+<li>执行命令:<ul>
+<li><code>curl -4sSkL https://www.baidu.com</code></li>
+<li><code>curl -4sSkL https://www.google.com</code></li>
+</ul>
+</li>
+</ul>
+<p>首先需要确保能够<code>curl</code>到数据，然后分别对比在访问百度和Google时的Debug日志，其中在访问Google时，会提示 <code>Overriding forwarding settings based on &#39;forward-socks5 127.0.0.1:1080 .&#39;</code>，这表明PAC生效。</p>
+</li>
+</ul>
+
+    </div>
+    <footer>
+        
+	
+	<div class="categories">
+	<a href="/categories/Linux/">Linux</a>
+	</div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Centos/">Centos</a>, <a href="/tags/科学上网/">科学上网</a>, <a href="/tags/GFW/">GFW</a>
+  </div>
+
+        <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+ <nav id="pagination" >
+    
+    
+    <a href="/配置中心/Config/配置中心选型/" class="alignright next" title="配置中心选型">配置中心选型</a>
+    
+    <div class="clearfix"></div>
+</nav>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="widget author-meta">
+    <div class="author-avatar">
+        <img src="/images/author.jpg">
+    </div>
+    <div class="author-name">coolwcan</div>
+    <div class="author-work">Java Developer</div>
+    <div class="author-location">
+        <i class="icon-location"></i>
+        <span>四川成都</span>
+    </div>
+    <div class="social-font">
+        
+        <a href="https://github.com/coolwcan" target="_blank" title="github"></a>
+        
+        
+        <a href="mailto:coolwcan@163.com" target="_blank" class="icon-email" title="email"></a>
+        
+    </div>
+</div>
+
+
+  <div class="widget search" style="margin-bottom: 30px">
+    <input id="local-search-input" class="search" type="search" placeholder="搜索">
+    <div id="local-search-result" style="display: none;" class="entry"></div>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+        <li><a href="/categories/Linux/">Linux</a><small>1</small></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+        <li><a href="/categories/配置中心/">配置中心</a><small>1</small></li>
+    
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/Centos/" style="font-size: 10px;">Centos</a> <a href="/tags/GFW/" style="font-size: 10px;">GFW</a> <a href="/tags/科学上网/" style="font-size: 10px;">科学上网</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.bootcss.com/mathjax/2.7.4/latest.js">
+</script>
+</body>
+</html>
