@@ -1,0 +1,284 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Java集合的fail-fast和fail-safe机制 | coolwcan</title>
+  <meta name="author" content="coolwcan">
+  
+  <meta name="description" content="（一）fail-fast 机制fail-fast 是指当通过 Iterator 去遍历集合时，如果存在另一个线程同时去修改该集合，将会抛出一个 ConcurrentModificationException 的异常，这种行为被称为 fail-fast。以下用 ArrayList 举例，可以发现其迭代">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Java集合的fail-fast和fail-safe机制"/>
+  <meta property="og:site_name" content="coolwcan"/>
+
+  
+    <meta property="og:image" content=""/>
+  
+
+  <link href="//images/favicon.ico" rel="icon" type="image/x-ico">
+  <link rel="alternate" href="/atom.xml" title="coolwcan" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//libs.baidu.com/jquery/1.8.0/jquery.min.js"></script>
+  <script>
+	$(function() {
+		$(".search").keydown(function(e){
+			if (e.keyCode==13) {
+                // var path = "/search.xml";
+                // searchFunc(path, 'local-search-input', 'local-search-result');
+			}
+		});
+	})
+
+    'use strict';
+	var search_id = 'local-search-input'
+    var content_id = 'local-search-result'
+    $.ajax({
+        url: '/search.xml',
+        dataType: "xml",
+        success: function( xmlResponse ) {
+            // get the contents from search data
+            var datas = $( "entry", xmlResponse ).map(function() {
+                return {
+                    title: $( "title", this ).text(),
+                    content: $("content",this).text(),
+                    url: $( "url" , this).text()
+                };
+            }).get();
+            var $input = document.getElementById(search_id);
+            var $resultContent = document.getElementById(content_id);
+            $input.addEventListener('input', function(){
+                $resultContent.style.display = 'none'
+                var str='<ul class=\"entry search-result-list\">';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = "";
+                if (this.value.trim().length <= 0) {
+                    return;
+                }
+                // perform local searching
+                datas.forEach(function(data) {
+                    var isMatch = true;
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    // only match artiles with not empty titles and contents
+                    if(data_title !== '') {
+                        keywords.forEach(function(keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            if( index_title < 0){
+                                isMatch = false;
+                            }
+                        });
+                    }
+                    // show search results
+                    if (isMatch) {
+                        str += "<li><a href='"+ data_url +"' class='search-result-title' target='_blank'>"+ "> " + data_title +"</a>";
+                    }
+                })
+                $resultContent.innerHTML = str;
+                if (str && str.length > 0) {
+                    $resultContent.style.display = 'block'
+                }
+            })
+        }
+    })
+
+
+  </script>
+</head>
+
+
+<body>
+  <header><div>
+    <nav class="animated">
+        <ul>
+            
+            <li><a href="/">Home</a></li>
+            
+            <li><a href="/about">About</a></li>
+            
+            <li><a href="/atom.xml">RSS</a></li>
+        </ul>
+    </nav>
+</div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  <div class="post-content">
+    <header class="article-info clearfix">
+	<h1 itemprop="name">
+		Java集合的fail-fast和fail-safe机制
+	</h1>
+</header>
+    <div class="entry">
+        <h3 id="（一）fail-fast_机制">（一）<code>fail-fast</code> 机制</h3><p><code>fail-fast</code> 是指当通过 <code>Iterator</code> 去遍历集合时，如果存在另一个线程同时去修改该集合，将会抛出一个 <code>ConcurrentModificationException</code> 的异常，这种行为被称为 <code>fail-fast</code>。以下用 <code>ArrayList</code> 举例，可以发现其迭代器如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">private class Itr implements Iterator&lt;E&gt; &#123;</span><br><span class="line">    int cursor;       // index of next element to return</span><br><span class="line">    int lastRet = -1; // index of last element returned; -1 if no such</span><br><span class="line">    int expectedModCount = modCount;</span><br><span class="line">    public boolean hasNext() &#123;</span><br><span class="line">        return cursor != size;</span><br><span class="line">    &#125;</span><br><span class="line">    public E next() &#123;</span><br><span class="line">        checkForComodification();</span><br><span class="line">        // ...</span><br><span class="line">    &#125;</span><br><span class="line">    public void remove() &#123;</span><br><span class="line">        if (lastRet &lt; 0)</span><br><span class="line">            throw new IllegalStateException();</span><br><span class="line">        checkForComodification();</span><br><span class="line">        // ..</span><br><span class="line">    &#125;</span><br><span class="line">    @Override</span><br><span class="line">    public void forEachRemaining(Consumer&lt;? super E&gt; consumer) &#123;</span><br><span class="line">        // ..</span><br><span class="line">        checkForComodification();</span><br><span class="line">    &#125;</span><br><span class="line">    final void checkForComodification() &#123;</span><br><span class="line">        if (modCount != expectedModCount)</span><br><span class="line">            throw new ConcurrentModificationException();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到在调用 <code>next()</code> 时，会调用 <code>checkForComodification()</code> 函数，该函数仅仅用于比较 <code>expectedModCount</code> 与 <code>modCount</code>是否相等。<code>modCount</code> 是 <code>ArrayList</code> 中的一个变量，当创建 <code>Itr</code> 这个迭代器时，将会为 <code>expectedModCount</code> 赋值。也就是说当 <code>modCount</code> 改变时，将会触发 <code>fail-fast</code> 机制。那什么地方会修改 <code>modCount</code> 呢？在 <code>ArrayList</code> 有如下的代码:</p>
+<p>其增加方法:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public boolean add(E e) &#123;</span><br><span class="line">    ensureCapacityInternal(size + 1);  // Increments modCount!!</span><br><span class="line"> 	//..</span><br><span class="line">&#125;</span><br><span class="line">private void ensureCapacityInternal(int minCapacity) &#123;</span><br><span class="line">    // ..</span><br><span class="line">    ensureExplicitCapacity(minCapacity);</span><br><span class="line">&#125;</span><br><span class="line">private void ensureExplicitCapacity(int minCapacity) &#123;</span><br><span class="line">    modCount++;</span><br><span class="line">	// ..</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>其删除方法:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public E remove(int index) &#123;</span><br><span class="line">    modCount++;</span><br><span class="line">    // ..</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">private void fastRemove(int index) &#123;</span><br><span class="line">    modCount++;</span><br><span class="line"> 	// ..</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其 <code>clear</code> 方法:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">public void clear() &#123;</span><br><span class="line">    modCount++;</span><br><span class="line">	// ..</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到其增加、删除的操作，都会影响 <code>modCount</code>，即所有的影响集合大小的操作，都将使 <code>modCount</code> 改变。</p>
+<h3 id="（二）fail-safe_机制">（二）<code>fail-safe</code> 机制</h3><p><code>fail-safe</code>与<code>fail-fast</code>相对应，<code>fail-fast</code>用于避免用户并发修改数据，而<code>fail-safe</code>则是为保证让用户能够并发地访问及修改数据，当然如果可以并发修改数据，也就不会抛出<code>ConcurrentModificationException</code>。以下就简单地分析一下并发集合<code>ConcurrentHashMap</code>是如何处理的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">// P1</span><br><span class="line">static final class EntryIterator&lt;K,V&gt; extends BaseIterator&lt;K,V&gt;</span><br><span class="line">        implements Iterator&lt;Map.Entry&lt;K,V&gt;&gt; &#123;</span><br><span class="line">        </span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    public final Map.Entry&lt;K,V&gt; next() &#123;</span><br><span class="line">        Node&lt;K,V&gt; p;</span><br><span class="line">        if ((p = next) == null)</span><br><span class="line">            throw new NoSuchElementException();</span><br><span class="line">        K k = p.key;</span><br><span class="line">        V v = p.val;</span><br><span class="line">        lastReturned = p;</span><br><span class="line">        advance();</span><br><span class="line">        return new MapEntry&lt;K,V&gt;(k, v, map);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// P2</span><br><span class="line">static class BaseIterator&lt;K,V&gt; extends Traverser&lt;K,V&gt; &#123;</span><br><span class="line">        final ConcurrentHashMap&lt;K,V&gt; map;</span><br><span class="line">        </span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    public final void remove() &#123;</span><br><span class="line">        Node&lt;K,V&gt; p;</span><br><span class="line">        if ((p = lastReturned) == null)</span><br><span class="line">            throw new IllegalStateException();</span><br><span class="line">        lastReturned = null;</span><br><span class="line">        map.replaceNode(p.key, null, null);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在<code>fail-fast</code>中，主要关注的其<code>iterator</code>，而<code>iterator</code>的关键点在于其<code>remove</code>方法的处理方式。在<code>ConcurrentHashMap</code>中<code>iterator</code>的本质就是<code>EntryIterator</code>对象，通过代码可以看到，其删除操作，并不是一个真正的删除，而是临时将对象的值设置为null，所以<code>ConcurrentHashMap</code>不能存值为NULL的对象。</p>
+
+    </div>
+    <footer>
+        
+	
+	<div class="categories">
+	<a href="/categories/Java/">Java</a>
+	</div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Java/">Java</a>, <a href="/tags/Collection/">Collection</a>
+  </div>
+
+        <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+ <nav id="pagination" >
+    
+    <a href="/Linux/Linux/Centos命令PAC科学上网/" class="alignleft prev" title="Centos命令PAC科学上网">Centos命令PAC科学上网</a>
+    
+    
+    <a href="/配置中心/Config/配置中心选型/" class="alignright next" title="配置中心选型">配置中心选型</a>
+    
+    <div class="clearfix"></div>
+</nav>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="widget author-meta">
+    <div class="author-avatar">
+        <img src="/images/author.jpg">
+    </div>
+    <div class="author-name">coolwcan</div>
+    <div class="author-work">Java Developer</div>
+    <div class="author-location">
+        <i class="icon-location"></i>
+        <span>四川成都</span>
+    </div>
+    <div class="social-font">
+        
+        <a href="https://github.com/coolwcan" target="_blank" title="github"></a>
+        
+        
+        <a href="mailto:coolwcan@163.com" target="_blank" class="icon-email" title="email"></a>
+        
+    </div>
+</div>
+
+
+  <div class="widget search" style="margin-bottom: 30px">
+    <input id="local-search-input" class="search" type="search" placeholder="搜索">
+    <div id="local-search-result" style="display: none;" class="entry"></div>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+        <li><a href="/categories/Java/">Java</a><small>1</small></li>
+    
+  
+    
+  
+    
+        <li><a href="/categories/Linux/">Linux</a><small>1</small></li>
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+  
+    
+        <li><a href="/categories/配置中心/">配置中心</a><small>1</small></li>
+    
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">标签云</h3>
+  <div class="entry">
+    <a href="/tags/Centos/" style="font-size: 10px;">Centos</a> <a href="/tags/Collection/" style="font-size: 10px;">Collection</a> <a href="/tags/GFW/" style="font-size: 10px;">GFW</a> <a href="/tags/Java/" style="font-size: 10px;">Java</a> <a href="/tags/科学上网/" style="font-size: 10px;">科学上网</a>
+  </div>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.bootcss.com/mathjax/2.7.4/latest.js">
+</script>
+</body>
+</html>
