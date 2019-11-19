@@ -170,7 +170,7 @@
 <li>通过发送信号，重启filebeat或者fluentd，从而采集新的容器日志</li>
 </ul>
 <h3 id="最终的日志方案">最终的日志方案</h3><p>访方案仅仅针对<strong>k8s环境</strong>，需要在k8s集群中部署一个log-pilot的daemonset，利用daemonset的特性，会保证每一个k8s所有节点上会自动部署仅仅一个log-pilot，而log-pilot则负责当前节点的所有日志收集工作。log-pilot采用了fluentd的实现。整个流程如下:</p>
-<p> <img src="./pics/日志方案流程图.png" alt="日志方案流程图.png"></p>
+<p> <img src="pics/日志方案流程图.png" alt="日志方案流程图.png"></p>
 <p>为了能够保证log-pilot能够正常工作，在整个过程中有如下规范。规范主要分为三大类：</p>
 <ul>
 <li><p>日志路径规范</p>
